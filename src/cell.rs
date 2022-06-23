@@ -1,7 +1,6 @@
 use venum::venum::Value;
 
-use crate::errors::{DataAccessErrors, Result, VenumTdsError};
-use crate::traits::{Indexed, Named};
+use crate::traits::{Indexed, Named, TypeInfo};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct DataCell {
@@ -38,22 +37,6 @@ impl Indexed for DataCell {
     fn set_idx(&mut self, idx: usize) {
         self.idx = idx;
     }
-    fn get_by_idx(&self, idx: usize) -> Result<&Self> {
-        match idx == self.idx {
-            true => Ok(self),
-            false => Err(VenumTdsError::DataAccess(
-                DataAccessErrors::IllegalIdxAccess { idx },
-            )),
-        }
-    }
-    fn get_by_idx_mut(&mut self, idx: usize) -> Result<&mut Self> {
-        match idx == self.idx {
-            true => Ok(self),
-            false => Err(VenumTdsError::DataAccess(
-                DataAccessErrors::IllegalIdxAccess { idx },
-            )),
-        }
-    }
 }
 
 impl Named for DataCell {
@@ -63,24 +46,35 @@ impl Named for DataCell {
     fn set_name(&mut self, name: &str) {
         self.name = String::from(name);
     }
-    fn get_by_name(&self, name: &str) -> Result<&Self> {
-        match name == self.name {
-            true => Ok(self),
-            false => Err(VenumTdsError::DataAccess(
-                DataAccessErrors::IllegalNameAccess {
-                    name: String::from(name),
-                },
-            )),
-        }
+}
+
+impl TypeInfo for DataCell {
+    fn get_type_info(&self) -> &Value {
+        &self.type_info
     }
-    fn get_by_name_mut(&mut self, name: &str) -> Result<&mut Self> {
-        match name == self.name {
-            true => Ok(self),
-            false => Err(VenumTdsError::DataAccess(
-                DataAccessErrors::IllegalNameAccess {
-                    name: String::from(name),
-                },
-            )),
-        }
+}
+
+#[cfg(test)]
+mod tests {
+    use venum::venum::Value;
+
+    use super::*;
+
+    #[test]
+    fn test_indexed_on_data_cell() {
+        let d = DataCell::new_without_data(Value::bool_default(), String::from("col1"), 123);
+        assert_eq!(123, d.get_idx());
+    }
+
+    #[test]
+    fn test_named_on_data_cell() {
+        let d = DataCell::new_without_data(Value::bool_default(), String::from("col1"), 123);
+        assert_eq!("col1", d.get_name());
+    }
+
+    #[test]
+    fn test_typeinfo_on_data_cell() {
+        let d = DataCell::new_without_data(Value::bool_default(), String::from("col1"), 123);
+        assert_eq!(&Value::bool_default(), d.get_type_info());
     }
 }
