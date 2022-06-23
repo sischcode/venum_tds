@@ -1,7 +1,10 @@
 [package]
 name = "venum_tds"
 version = "0.1.0"
+description = "Tabular Data Structures (tds), based on venum's `Value` Enum."
 authors = ["Joerg Sischka <sischcode@gmx.net>"]
+readme = "README.md"
+keywords = ["table", "tabular", "row", "cell", "csv", "parsing", "dynamic typing"]
 license = "Apache-2.0"
 edition = "2021"
 rust-version = "1.61"
