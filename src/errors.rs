@@ -11,6 +11,13 @@ pub enum WrappedErrors {
 pub enum VenumTdsError {
     Generic { msg: String },
     Wrapped(WrappedErrors),
+    DataAccess(DataAccessErrors),
+}
+
+#[derive(Debug, PartialEq, Display, Clone)]
+pub enum DataAccessErrors {
+    IllegalIdxAccess { idx: usize },
+    IllegalNameAccess { name: String },
 }
 
 pub type Result<T> = std::result::Result<T, VenumTdsError>;
