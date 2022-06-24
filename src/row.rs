@@ -49,6 +49,15 @@ impl DataContainer<DataCell> for DataCellRow {
     }
 }
 
+impl IntoIterator for DataCellRow {
+    type Item = DataCell;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct DataValueRow(pub Vec<Option<Value>>);
 
