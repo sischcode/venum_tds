@@ -2,7 +2,7 @@ use venum::venum::Value;
 
 use crate::traits::DataEntry;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
 pub struct DataCell {
     pub type_info: Value, // We use the enum variants default value as our type info
     pub name: String,     // the column header
