@@ -1,6 +1,9 @@
 use venum::venum::Value;
 
-use crate::traits::{IndexAccess, Indexed, NameAccess, Named};
+use crate::{
+    errors::{DataAccessErrors, Result, VenumTdsError},
+    traits::{DataContainer, DataEntry},
+};
 
 use super::cell::DataCell;
 
@@ -13,16 +16,14 @@ impl DataCellRow {
     }
 }
 
-impl IndexAccess<DataCell> for DataCellRow {
+impl DataContainer<DataCell> for DataCellRow {
     fn get_by_idx(&self, idx: usize) -> Option<&DataCell> {
         self.0.iter().find(|&vec_elem| vec_elem.get_idx() == idx)
     }
     fn get_by_idx_mut(&mut self, idx: usize) -> Option<&mut DataCell> {
         self.0.iter_mut().find(|vec_elem| vec_elem.get_idx() == idx)
     }
-}
 
-impl NameAccess<DataCell> for DataCellRow {
     fn get_by_name(&self, name: &str) -> Option<&DataCell> {
         self.0.iter().find(|&vec_elem| vec_elem.get_name() == name)
     }
@@ -31,12 +32,27 @@ impl NameAccess<DataCell> for DataCellRow {
             .iter_mut()
             .find(|vec_elem| vec_elem.get_name() == name)
     }
+
+    fn del_by_idx(&mut self, idx: usize) -> Result<DataCell> {
+        let idx = self
+            .0
+            .iter()
+            .position(|vec_elem| vec_elem.get_idx() == idx)
+            .ok_or(VenumTdsError::DataAccess(
+                DataAccessErrors::IllegalIdxAccess { idx },
+            ))?;
+        Ok(self.0.swap_remove(idx))
+    }
+
+    fn add(&mut self, elem: DataCell) {
+        self.0.push(elem);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct DataRow(pub Vec<Option<Value>>);
+pub struct DataValueRow(pub Vec<Option<Value>>);
 
-impl From<DataCellRow> for DataRow {
+impl From<DataCellRow> for DataValueRow {
     fn from(mut vcr: DataCellRow) -> Self {
         // TODO: this is not really ...correct, depending on the definition.
         //       we should probably insert the entries into the plain vector
@@ -55,13 +71,9 @@ impl From<DataCellRow> for DataRow {
 mod tests {
     use venum::venum::Value;
 
-    use crate::{
-        cell::DataCell,
-        row::DataCellRow,
-        traits::{IndexAccess, NameAccess},
-    };
+    use crate::{cell::DataCell, row::DataCellRow, traits::DataContainer};
 
-    use super::DataRow;
+    use super::DataValueRow;
 
     #[test]
     pub fn test_try_from_w_data() {
@@ -84,7 +96,7 @@ mod tests {
         c.0.push(vc1);
         c.0.push(vc2);
 
-        let r: DataRow = c.into();
+        let r: DataValueRow = c.into();
         println!("{:?}", r);
     }
 
@@ -96,7 +108,7 @@ mod tests {
         c.0.push(vc1);
         c.0.push(vc2);
 
-        let r: DataRow = c.into();
+        let r: DataValueRow = c.into();
         println!("{:?}", r);
     }
 
@@ -117,7 +129,7 @@ mod tests {
         c.0.push(vc2);
         c.0.push(vc3);
 
-        let r: DataRow = c.into();
+        let r: DataValueRow = c.into();
         println!("{:?}", r);
     }
 
@@ -136,7 +148,7 @@ mod tests {
         c.0.push(vc2);
         c.0.push(vc3);
 
-        let r: DataRow = c.into();
+        let r: DataValueRow = c.into();
         println!("{:?}", r);
     }
 

@@ -1,6 +1,6 @@
 use venum::venum::Value;
 
-use crate::traits::{Indexed, Named, TypeInfo};
+use crate::traits::DataEntry;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct DataCell {
@@ -30,27 +30,32 @@ impl DataCell {
     }
 }
 
-impl Indexed for DataCell {
+impl DataEntry for DataCell {
+    type D = Option<Value>;
+
+    fn get_type_info(&self) -> &Value {
+        &self.type_info
+    }
+
     fn get_idx(&self) -> usize {
         self.idx
     }
     fn set_idx(&mut self, idx: usize) {
         self.idx = idx;
     }
-}
 
-impl Named for DataCell {
     fn get_name(&self) -> &str {
         self.name.as_str()
     }
     fn set_name(&mut self, name: &str) {
         self.name = String::from(name);
     }
-}
 
-impl TypeInfo for DataCell {
-    fn get_type_info(&self) -> &Value {
-        &self.type_info
+    fn get_data(&self) -> &Self::D {
+        &self.data
+    }
+    fn set_data(&mut self, data: Self::D) {
+        self.data = data;
     }
 }
 
