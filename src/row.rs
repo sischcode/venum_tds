@@ -39,7 +39,7 @@ impl DataContainer<DataCell> for DataCellRow {
             .iter()
             .position(|vec_elem| vec_elem.get_idx() == idx)
             .ok_or(VenumTdsError::DataAccess(
-                DataAccessErrors::IllegalIdxAccess { idx },
+                DataAccessErrors::IllegalIdxAccess { idx }, // TODO: better error...
             ))?;
         Ok(self.0.swap_remove(idx))
     }
