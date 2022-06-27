@@ -16,7 +16,9 @@ impl DataCellRow {
     }
 }
 
-impl DataContainer<DataCell> for DataCellRow {
+impl DataContainer for DataCellRow {
+    type T = DataCell;
+
     fn get_by_idx(&self, idx: usize) -> Option<&DataCell> {
         self.0.iter().find(|&vec_elem| vec_elem.get_idx() == idx)
     }

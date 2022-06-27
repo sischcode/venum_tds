@@ -17,16 +17,15 @@ pub trait DataEntry {
     fn set_data(&mut self, data: Self::D);
 }
 
-pub trait DataContainer<T>
-where
-    T: DataEntry,
-{
-    fn get_by_idx(&self, idx: usize) -> Option<&T>;
-    fn get_by_idx_mut(&mut self, idx: usize) -> Option<&mut T>;
+pub trait DataContainer {
+    type T: DataEntry;
 
-    fn del_by_idx(&mut self, idx: usize) -> Result<T>;
-    fn add(&mut self, elem: T);
+    fn get_by_idx(&self, idx: usize) -> Option<&Self::T>;
+    fn get_by_idx_mut(&mut self, idx: usize) -> Option<&mut Self::T>;
 
-    fn get_by_name(&self, name: &str) -> Option<&T>;
-    fn get_by_name_mut(&mut self, name: &str) -> Option<&mut T>;
+    fn del_by_idx(&mut self, idx: usize) -> Result<Self::T>;
+    fn add(&mut self, elem: Self::T);
+
+    fn get_by_name(&self, name: &str) -> Option<&Self::T>;
+    fn get_by_name_mut(&mut self, name: &str) -> Option<&mut Self::T>;
 }
