@@ -2,7 +2,7 @@ use venum::venum::Value;
 
 use crate::{
     errors::{DataAccessErrors, Result, VenumTdsError},
-    traits::{DataContainer, DataEntry},
+    traits::{DataContainer, DataIdent},
 };
 
 use super::cell::DataCell;
@@ -17,7 +17,7 @@ impl DataCellRow {
 }
 
 impl DataContainer for DataCellRow {
-    type T = DataCell;
+    type ITEM = DataCell;
 
     fn get_by_idx(&self, idx: usize) -> Option<&DataCell> {
         self.0.iter().find(|&vec_elem| vec_elem.get_idx() == idx)

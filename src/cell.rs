@@ -1,12 +1,12 @@
 use venum::venum::Value;
 
-use crate::traits::DataEntry;
+use crate::traits::{DataAccess, DataIdent};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
 pub struct DataCell {
     pub type_info: Value, // We use the enum variants default value as our type info
-    pub name: String,     // the column header
-    pub idx: usize,       // columns are zero-indexed for now!
+    pub name: String,     // the "column header"
+    pub idx: usize,       // "columns" are zero-indexed for now!
     pub data: Option<Value>, // Data
 }
 
@@ -30,9 +30,7 @@ impl DataCell {
     }
 }
 
-impl DataEntry for DataCell {
-    type D = Option<Value>;
-
+impl DataIdent for DataCell {
     fn get_type_info(&self) -> &Value {
         &self.type_info
     }
@@ -50,11 +48,15 @@ impl DataEntry for DataCell {
     fn set_name(&mut self, name: &str) {
         self.name = String::from(name);
     }
+}
 
-    fn get_data(&self) -> &Self::D {
+impl DataAccess for DataCell {
+    type DATA = Option<Value>;
+
+    fn get_data(&self) -> &Self::DATA {
         &self.data
     }
-    fn set_data(&mut self, data: Self::D) {
+    fn set_data(&mut self, data: Self::DATA) {
         self.data = data;
     }
 }
