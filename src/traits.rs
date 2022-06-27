@@ -15,8 +15,8 @@ pub trait DataIdent {
 pub trait DataAccess {
     type DATA;
 
-    fn get_data(&self) -> &Self::DATA;
-    fn set_data(&mut self, data: Self::DATA);
+    fn get_data(&self) -> Option<&Self::DATA>;
+    fn set_data(&mut self, data: Option<Self::DATA>);
 }
 
 pub trait DataContainer {

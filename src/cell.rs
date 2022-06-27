@@ -51,12 +51,12 @@ impl DataIdent for DataCell {
 }
 
 impl DataAccess for DataCell {
-    type DATA = Option<Value>;
+    type DATA = Value;
 
-    fn get_data(&self) -> &Self::DATA {
-        &self.data
+    fn get_data(&self) -> Option<&Self::DATA> {
+        self.data.as_ref()
     }
-    fn set_data(&mut self, data: Self::DATA) {
+    fn set_data(&mut self, data: Option<Self::DATA>) {
         self.data = data;
     }
 }
