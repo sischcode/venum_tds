@@ -12,7 +12,13 @@ pub struct DataCellRow(pub Vec<DataCell>);
 
 impl DataCellRow {
     pub fn new() -> Self {
-        Self { 0: Vec::new() }
+        Self(Vec::new())
+    }
+}
+
+impl Default for DataCellRow {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -68,13 +74,12 @@ impl From<DataCellRow> for DataValueRow {
         // TODO: this is not really ...correct, depending on the definition.
         //       we should probably insert the entries into the plain vector
         //       in the correct index order from the source DataCellRow.
-        Self {
-            0: vcr
-                .0
+        Self(
+            vcr.0
                 .iter_mut()
                 .map(|v| std::mem::take(&mut v.data))
                 .collect(),
-        }
+        )
     }
 }
 
