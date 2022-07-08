@@ -1,6 +1,6 @@
 use venum::venum::Value;
 
-use crate::traits::{DataAccess, DataIdent};
+use crate::traits::VDataContainerItem;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
 pub struct DataCell {
@@ -30,9 +30,14 @@ impl DataCell {
     }
 }
 
-impl DataIdent for DataCell {
+impl VDataContainerItem for DataCell {
+    type DATA = Value;
+
     fn get_type_info(&self) -> &Value {
         &self.type_info
+    }
+    fn set_type_info(&mut self, type_info: Value) {
+        self.type_info = type_info;
     }
 
     fn get_idx(&self) -> usize {
@@ -48,10 +53,6 @@ impl DataIdent for DataCell {
     fn set_name(&mut self, name: &str) {
         self.name = String::from(name);
     }
-}
-
-impl DataAccess for DataCell {
-    type DATA = Value;
 
     fn get_data(&self) -> Option<&Self::DATA> {
         self.data.as_ref()

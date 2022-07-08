@@ -2,7 +2,7 @@ use venum::venum::Value;
 
 use crate::{
     errors::{DataAccessErrors, Result, VenumTdsError},
-    traits::{DataContainer, DataIdent},
+    traits::{VDataContainer, VDataContainerItem},
 };
 
 use super::cell::DataCell;
@@ -22,7 +22,7 @@ impl Default for DataCellRow {
     }
 }
 
-impl DataContainer for DataCellRow {
+impl VDataContainer for DataCellRow {
     type ITEM = DataCell;
 
     fn get_by_idx(&self, idx: usize) -> Option<&DataCell> {
@@ -87,7 +87,7 @@ impl From<DataCellRow> for DataValueRow {
 mod tests {
     use venum::venum::Value;
 
-    use crate::{cell::DataCell, row::DataCellRow, traits::DataContainer};
+    use crate::{cell::DataCell, row::DataCellRow, traits::VDataContainer};
 
     use super::DataValueRow;
 

@@ -2,25 +2,24 @@ use venum::venum::Value;
 
 use crate::errors::Result;
 
-pub trait DataIdent {
+pub trait VDataContainerItem {
+    type DATA;
+
     fn get_type_info(&self) -> &Value;
+    fn set_type_info(&mut self, type_info: Value);
 
     fn get_idx(&self) -> usize;
     fn set_idx(&mut self, idx: usize);
 
     fn get_name(&self) -> &str;
     fn set_name(&mut self, name: &str);
-}
-
-pub trait DataAccess {
-    type DATA;
 
     fn get_data(&self) -> Option<&Self::DATA>;
     fn set_data(&mut self, data: Option<Self::DATA>);
 }
 
-pub trait DataContainer {
-    type ITEM: DataIdent + DataAccess;
+pub trait VDataContainer {
+    type ITEM: VDataContainerItem;
 
     fn get_by_idx(&self, idx: usize) -> Option<&Self::ITEM>;
     fn get_by_idx_mut(&mut self, idx: usize) -> Option<&mut Self::ITEM>;
