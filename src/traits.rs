@@ -1,12 +1,12 @@
-use venum::venum::Value;
+use venum::venum::ValueType;
 
 use crate::errors::Result;
 
 pub trait VDataContainerItem {
     type DATA;
 
-    fn get_type_info(&self) -> &Value;
-    fn set_type_info(&mut self, type_info: Value);
+    fn get_type_info(&self) -> &ValueType;
+    fn set_type_info(&mut self, type_info: ValueType);
 
     fn get_idx(&self) -> usize;
     fn set_idx(&mut self, idx: usize);
@@ -14,8 +14,9 @@ pub trait VDataContainerItem {
     fn get_name(&self) -> &str;
     fn set_name(&mut self, name: &str);
 
-    fn get_data(&self) -> Option<&Self::DATA>;
-    fn set_data(&mut self, data: Option<Self::DATA>);
+    fn get_data(&self) -> &Self::DATA;
+    fn get_data_mut(&mut self) -> &mut Self::DATA;
+    fn set_data(&mut self, data: Self::DATA);
 }
 
 pub trait VDataContainer {

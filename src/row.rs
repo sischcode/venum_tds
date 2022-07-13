@@ -67,7 +67,7 @@ impl IntoIterator for DataCellRow {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct DataValueRow(pub Vec<Option<Value>>);
+pub struct DataValueRow(pub Vec<Value>);
 
 impl From<DataCellRow> for DataValueRow {
     fn from(mut vcr: DataCellRow) -> Self {
@@ -85,7 +85,7 @@ impl From<DataCellRow> for DataValueRow {
 
 #[cfg(test)]
 mod tests {
-    use venum::venum::Value;
+    use venum::venum::{Value, ValueType};
 
     use crate::{cell::DataCell, row::DataCellRow, traits::VDataContainer};
 
@@ -96,76 +96,62 @@ mod tests {
         let mut c = DataCellRow::new();
 
         let vc1 = DataCell::new(
-            Value::string_default(),
+            ValueType::String,
             String::from("foo"),
             0,
-            Some(Value::String(String::from("meh"))),
+            Value::String(String::from("meh")),
         );
 
         let vc2 = DataCell::new(
-            Value::string_default(),
+            ValueType::String,
             String::from("bar"),
             1,
-            Some(Value::String(String::from("meh2"))),
+            Value::String(String::from("meh2")),
         );
 
         c.0.push(vc1);
         c.0.push(vc2);
 
-        let r: DataValueRow = c.into();
-        println!("{:?}", r);
+        let mut res: DataValueRow = c.into();
+        assert_eq!(
+            String::from("meh2"),
+            String::try_from(res.0.pop().unwrap()).unwrap()
+        );
+        assert_eq!(Value::String(String::from("meh")), res.0.pop().unwrap());
     }
 
     #[test]
     pub fn test_try_from_wo_data() {
         let mut c = DataCellRow::new();
-        let vc1 = DataCell::new_without_data(Value::string_default(), String::from("foo"), 0);
-        let vc2 = DataCell::new_without_data(Value::string_default(), String::from("bar"), 1);
+        let vc1 = DataCell::new(ValueType::String, String::from("foo"), 0, Value::None);
+        let vc2 = DataCell::new(ValueType::String, String::from("bar"), 1, Value::None);
         c.0.push(vc1);
         c.0.push(vc2);
 
-        let r: DataValueRow = c.into();
-        println!("{:?}", r);
+        let mut res: DataValueRow = c.into();
+        assert_eq!(Value::None, res.0.pop().unwrap());
+        assert_eq!(Value::None, res.0.pop().unwrap());
     }
 
     #[test]
-    pub fn test_try_from_w_mixed_data_1() {
-        // to be clear. The constructed case here can't (well, shouldn't) happen in our use case, since we
-        // always parse a complete line. The real world case is more like in: test_try_from_w_mixed_data_2
+    pub fn test_try_from_w_mixed_data() {
         let mut c = DataCellRow::new();
-        let vc1 = DataCell::new_without_data(Value::string_default(), String::from("foo"), 0);
-        let vc2 = DataCell::new_without_data(Value::string_default(), String::from("bar"), 1);
+        let vc1 = DataCell::new(ValueType::String, String::from("foo"), 0, Value::None);
+        let vc2 = DataCell::new(ValueType::String, String::from("bar"), 1, Value::None);
         let vc3 = DataCell::new(
-            Value::string_default(),
+            ValueType::String,
             String::from("col3"),
-            3,
-            Some(Value::String(String::from("baz"))),
+            2,
+            Value::String(String::from("baz")),
         );
         c.0.push(vc1);
         c.0.push(vc2);
         c.0.push(vc3);
 
-        let r: DataValueRow = c.into();
-        println!("{:?}", r);
-    }
-
-    #[test]
-    pub fn test_try_from_w_mixed_data_2() {
-        let mut c = DataCellRow::new();
-        let vc1 = DataCell::new(Value::string_default(), String::from("foo"), 0, None);
-        let vc2 = DataCell::new(Value::string_default(), String::from("bar"), 1, None);
-        let vc3 = DataCell::new(
-            Value::string_default(),
-            String::from("col3"),
-            3,
-            Some(Value::String(String::from("baz"))),
-        );
-        c.0.push(vc1);
-        c.0.push(vc2);
-        c.0.push(vc3);
-
-        let r: DataValueRow = c.into();
-        println!("{:?}", r);
+        let mut res: DataValueRow = c.into();
+        assert_eq!(Value::String(String::from("baz")), res.0.pop().unwrap());
+        assert_eq!(Value::None, res.0.pop().unwrap());
+        assert_eq!(Value::None, res.0.pop().unwrap());
     }
 
     #[test]
@@ -173,10 +159,10 @@ mod tests {
         let mut c = DataCellRow::new();
 
         let vc1 = DataCell::new(
-            Value::string_default(),
+            ValueType::String,
             String::from("foo"),
             123,
-            Some(Value::String(String::from("meh"))),
+            Value::String(String::from("meh")),
         );
         c.0.push(vc1);
 
@@ -189,10 +175,10 @@ mod tests {
         let mut c = DataCellRow::new();
 
         let vc1 = DataCell::new(
-            Value::string_default(),
+            ValueType::String,
             String::from("foo"),
             123,
-            Some(Value::String(String::from("meh"))),
+            Value::String(String::from("meh")),
         );
         c.0.push(vc1);
 

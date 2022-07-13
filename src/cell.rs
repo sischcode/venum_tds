@@ -1,31 +1,30 @@
-use venum::venum::Value;
+use venum::venum::{Value, ValueType};
 
 use crate::traits::VDataContainerItem;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
 pub struct DataCell {
-    pub type_info: Value, // We use the enum variants default value as our type info
+    pub dtype: ValueType, // We use the enum variants default value as our type info
     pub name: String,     // the "column header"
     pub idx: usize,       // "columns" are zero-indexed for now!
-    pub data: Option<Value>, // Data
+    pub data: Value,      // Data
 }
 
 impl DataCell {
-    pub fn new_without_data(type_info: Value, name: String, idx: usize) -> Self {
+    pub fn new(type_info: ValueType, name: String, idx: usize, data: Value) -> Self {
         Self {
-            type_info,
-            name,
-            idx,
-            data: None,
-        }
-    }
-
-    pub fn new(type_info: Value, name: String, idx: usize, data: Option<Value>) -> Self {
-        Self {
-            type_info,
+            dtype: type_info,
             name,
             idx,
             data,
+        }
+    }
+    pub fn new_without_data(type_info: ValueType, name: String, idx: usize) -> Self {
+        Self {
+            dtype: type_info,
+            name,
+            idx,
+            data: Value::None,
         }
     }
 }
@@ -33,11 +32,11 @@ impl DataCell {
 impl VDataContainerItem for DataCell {
     type DATA = Value;
 
-    fn get_type_info(&self) -> &Value {
-        &self.type_info
+    fn get_type_info(&self) -> &ValueType {
+        &self.dtype
     }
-    fn set_type_info(&mut self, type_info: Value) {
-        self.type_info = type_info;
+    fn set_type_info(&mut self, type_info: ValueType) {
+        self.dtype = type_info;
     }
 
     fn get_idx(&self) -> usize {
@@ -54,10 +53,13 @@ impl VDataContainerItem for DataCell {
         self.name = String::from(name);
     }
 
-    fn get_data(&self) -> Option<&Self::DATA> {
-        self.data.as_ref()
+    fn get_data(&self) -> &Self::DATA {
+        &self.data
     }
-    fn set_data(&mut self, data: Option<Self::DATA>) {
+    fn get_data_mut(&mut self) -> &mut Self::DATA {
+        &mut self.data
+    }
+    fn set_data(&mut self, data: Self::DATA) {
         self.data = data;
     }
 }
@@ -70,19 +72,25 @@ mod tests {
 
     #[test]
     fn test_indexed_on_data_cell() {
-        let d = DataCell::new_without_data(Value::bool_default(), String::from("col1"), 123);
+        let d = DataCell::new(ValueType::Bool, String::from("col1"), 123, Value::None);
         assert_eq!(123, d.get_idx());
     }
 
     #[test]
     fn test_named_on_data_cell() {
-        let d = DataCell::new_without_data(Value::bool_default(), String::from("col1"), 123);
+        let d = DataCell::new(ValueType::Bool, String::from("col1"), 123, Value::None);
         assert_eq!("col1", d.get_name());
     }
 
     #[test]
     fn test_typeinfo_on_data_cell() {
-        let d = DataCell::new_without_data(Value::bool_default(), String::from("col1"), 123);
-        assert_eq!(&Value::bool_default(), d.get_type_info());
+        let d = DataCell::new(ValueType::Bool, String::from("col1"), 123, Value::None);
+        assert_eq!(&ValueType::Bool, d.get_type_info());
+    }
+
+    #[test]
+    fn test_data_on_data_cell() {
+        let d = DataCell::new(ValueType::Bool, String::from("col1"), 123, Value::None);
+        assert_eq!(&Value::None, d.get_data());
     }
 }
