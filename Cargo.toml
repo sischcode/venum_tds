@@ -15,3 +15,10 @@ rust-version = "1.62"
 venum = { path = "../venum", version = "0.1.0" }
 thiserror = "1.0"
 strum_macros = "0.24"
+
+# Implicit feature: "dep:regex"
+regex = { version = "1.5", optional = true}
+
+[features]
+default = ["transform"]
+transform = ["dep:regex"]
