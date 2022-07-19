@@ -42,11 +42,38 @@ impl TransrichDataCellRowInplace for DeleteItemAtIdx {
     }
 }
 
-pub struct AddItem(pub DataCell);
-impl TransrichDataCellRowInplace for AddItem {
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "jsonconf", derive(serde::Deserialize))]
+pub enum RuntimeValue {
+    CurrentDateTimeUTC,
+}
+
+pub struct AddItemStatic(pub DataCell);
+impl TransrichDataCellRowInplace for AddItemStatic {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
         data_cell_row.push(self.0.clone());
         Ok(())
+    }
+}
+
+pub struct AddItemRuntime {
+    pub header: Option<String>,
+    pub idx: usize,
+    pub rtv: RuntimeValue,
+}
+impl TransrichDataCellRowInplace for AddItemRuntime {
+    fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
+        match self.rtv {
+            RuntimeValue::CurrentDateTimeUTC => {
+                let add = DataCell::new(
+                    venum::venum::ValueType::DateTime,
+                    self.header.unwrap_or_else(|| self.idx.to_string()),
+                    self.idx,
+                    chrono::offset::Utc::now(),
+                );
+                Ok(())
+            }
+        }
     }
 }
 
@@ -137,7 +164,7 @@ mod tests {
     #[test]
     fn test_add_to_container() {
         let mut c = DataCellRow::new();
-        let container_transricher = AddItem(DataCell::new_without_data(
+        let container_transricher = AddItemStatic(DataCell::new_without_data(
             ValueType::Bool,
             String::from("col1"),
             0,
@@ -163,7 +190,7 @@ mod tests {
 
         let mut transrichers: Vec<Box<dyn TransrichDataCellRowInplace>> = Vec::with_capacity(4);
 
-        transrichers.push(Box::new(AddItem(DataCell::new_without_data(
+        transrichers.push(Box::new(AddItemStatic(DataCell::new_without_data(
             ValueType::Bool,
             String::from("col3"),
             2,

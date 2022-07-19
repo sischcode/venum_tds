@@ -7,7 +7,7 @@ use crate::{
     transform::{
         data_cell::splitting::SplitDataCellUsingValueSplit,
         data_cell_row::{
-            mutate::{AddItem, DeleteItemAtIdx, SplitItemAtIdx, TransrichDataCellRowInplace},
+            mutate::{AddItemStatic, DeleteItemAtIdx, SplitItemAtIdx, TransrichDataCellRowInplace},
             transrich_pass::TransrichPass,
         },
         value::spliting::{ValueStringRegexPairSplit, ValueStringSeparatorCharSplit},
@@ -78,7 +78,7 @@ impl TryFrom<TransformEnrichPassConfig> for TransrichPass {
                         AddItemType::Meta { key } => todo!(),
                         AddItemType::Static { value } => {
                             // CAUTION: this only supports the standard conversion! (Meaning, non-standard date/time formats are not supported here)
-                            transrichers.push(Box::new(AddItem {
+                            transrichers.push(Box::new(AddItemStatic {
                                 0: DataCell::new(
                                     cfg.target.target_type.clone(),
                                     cfg.target

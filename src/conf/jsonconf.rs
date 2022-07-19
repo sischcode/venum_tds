@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use venum::venum::ValueType;
 
+use crate::transform::data_cell_row::mutate::RuntimeValue;
+
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(tag = "name", rename_all = "camelCase")]
 pub enum SplitterType {
@@ -25,11 +27,6 @@ pub struct SplitItemConfig {
     pub delete_after_split: bool,
     pub target_left: ItemTargetConfig,
     pub target_right: ItemTargetConfig,
-}
-
-#[derive(Debug, Clone, Deserialize, PartialEq)]
-pub enum RuntimeValue {
-    CurrentDateTimeUTC,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
