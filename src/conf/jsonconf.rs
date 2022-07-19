@@ -14,6 +14,7 @@ pub struct ItemTargetConfig {
     pub idx: usize,
     pub header: Option<String>,
     pub target_type: ValueType,
+    // TODO: add chrono pattern!?
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]

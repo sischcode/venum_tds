@@ -56,7 +56,7 @@ pub struct SplitItemAtIdx<S: SplitDataCell> {
     pub delete_source_item: bool,
 }
 
-impl<'a, S> TransrichDataCellRowInplace for SplitItemAtIdx<S>
+impl<S> TransrichDataCellRowInplace for SplitItemAtIdx<S>
 where
     S: SplitDataCell,
 {
