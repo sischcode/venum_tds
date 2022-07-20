@@ -15,3 +15,22 @@ rust-version = "1.62"
 venum = { path = "../venum", version = "0.1.0" }
 thiserror = "1.0"
 strum_macros = "0.24"
+
+# Implicit features "dep:<crate-name>"
+regex = { version = "1.5", optional = true}
+chrono = {version = "0.4", optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true}
+serde_json = { version = "1.0", optional = true }
+
+[features]
+default = ["jsonconf"]
+
+# 1) we need chrono for adding Date/Time stuff during runtime
+# 2) we need regexp for, well, splitting via regex
+transform = ["dep:regex", "dep:chrono"]
+
+# We have all our json conf stuff (i.e. configuration via json) in a feature "jsonconf"
+# This in turn needs serde and serde_json, as well as the serde feature in venum. Also,
+# since this doesn't make any sense without "transform" to be enabled as well, we enable
+# it here. (We essentially json-configure the transformation, that's why we need it...)
+jsonconf = ["transform", "dep:serde", "dep:serde_json", "venum/serde"]

@@ -1,14 +1,11 @@
 use venum::venum::Value;
 
-use crate::{
-    errors::{DataAccessErrors, Result, VenumTdsError},
-    traits::{VDataContainer, VDataContainerItem},
-};
+use crate::errors::{DataAccessErrors, Result, VenumTdsError};
 
-use super::cell::DataCell;
+use super::data_cell::DataCell;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct DataCellRow(pub Vec<DataCell>);
+pub struct DataCellRow(pub Vec<DataCell>); // TODO: we actually don't want this to be public, but we still have code in patti_csv that relies on it.
 
 impl DataCellRow {
     pub fn new() -> Self {
@@ -22,26 +19,24 @@ impl Default for DataCellRow {
     }
 }
 
-impl VDataContainer for DataCellRow {
-    type ITEM = DataCell;
-
-    fn get_by_idx(&self, idx: usize) -> Option<&DataCell> {
+impl DataCellRow {
+    pub fn get_by_idx(&self, idx: usize) -> Option<&DataCell> {
         self.0.iter().find(|&vec_elem| vec_elem.get_idx() == idx)
     }
-    fn get_by_idx_mut(&mut self, idx: usize) -> Option<&mut DataCell> {
+    pub fn get_by_idx_mut(&mut self, idx: usize) -> Option<&mut DataCell> {
         self.0.iter_mut().find(|vec_elem| vec_elem.get_idx() == idx)
     }
 
-    fn get_by_name(&self, name: &str) -> Option<&DataCell> {
+    pub fn get_by_name(&self, name: &str) -> Option<&DataCell> {
         self.0.iter().find(|&vec_elem| vec_elem.get_name() == name)
     }
-    fn get_by_name_mut(&mut self, name: &str) -> Option<&mut DataCell> {
+    pub fn get_by_name_mut(&mut self, name: &str) -> Option<&mut DataCell> {
         self.0
             .iter_mut()
             .find(|vec_elem| vec_elem.get_name() == name)
     }
 
-    fn del_by_idx(&mut self, idx: usize) -> Result<DataCell> {
+    pub fn del_by_idx(&mut self, idx: usize) -> Result<DataCell> {
         let idx = self
             .0
             .iter()
@@ -52,8 +47,12 @@ impl VDataContainer for DataCellRow {
         Ok(self.0.swap_remove(idx))
     }
 
-    fn add(&mut self, elem: DataCell) {
+    pub fn push(&mut self, elem: DataCell) {
         self.0.push(elem);
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 }
 
@@ -67,7 +66,7 @@ impl IntoIterator for DataCellRow {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct DataValueRow(pub Vec<Option<Value>>);
+pub struct DataValueRow(pub Vec<Value>);
 
 impl From<DataCellRow> for DataValueRow {
     fn from(mut vcr: DataCellRow) -> Self {
@@ -85,9 +84,9 @@ impl From<DataCellRow> for DataValueRow {
 
 #[cfg(test)]
 mod tests {
-    use venum::venum::Value;
+    use venum::venum::{Value, ValueType};
 
-    use crate::{cell::DataCell, row::DataCellRow, traits::VDataContainer};
+    use crate::{data_cell::DataCell, data_cell_row::DataCellRow};
 
     use super::DataValueRow;
 
@@ -96,76 +95,62 @@ mod tests {
         let mut c = DataCellRow::new();
 
         let vc1 = DataCell::new(
-            Value::string_default(),
+            ValueType::String,
             String::from("foo"),
             0,
-            Some(Value::String(String::from("meh"))),
+            Value::String(String::from("meh")),
         );
 
         let vc2 = DataCell::new(
-            Value::string_default(),
+            ValueType::String,
             String::from("bar"),
             1,
-            Some(Value::String(String::from("meh2"))),
+            Value::String(String::from("meh2")),
         );
 
         c.0.push(vc1);
         c.0.push(vc2);
 
-        let r: DataValueRow = c.into();
-        println!("{:?}", r);
+        let mut res: DataValueRow = c.into();
+        assert_eq!(
+            String::from("meh2"),
+            String::try_from(res.0.pop().unwrap()).unwrap()
+        );
+        assert_eq!(Value::String(String::from("meh")), res.0.pop().unwrap());
     }
 
     #[test]
     pub fn test_try_from_wo_data() {
         let mut c = DataCellRow::new();
-        let vc1 = DataCell::new_without_data(Value::string_default(), String::from("foo"), 0);
-        let vc2 = DataCell::new_without_data(Value::string_default(), String::from("bar"), 1);
+        let vc1 = DataCell::new(ValueType::String, String::from("foo"), 0, Value::None);
+        let vc2 = DataCell::new(ValueType::String, String::from("bar"), 1, Value::None);
         c.0.push(vc1);
         c.0.push(vc2);
 
-        let r: DataValueRow = c.into();
-        println!("{:?}", r);
+        let mut res: DataValueRow = c.into();
+        assert_eq!(Value::None, res.0.pop().unwrap());
+        assert_eq!(Value::None, res.0.pop().unwrap());
     }
 
     #[test]
-    pub fn test_try_from_w_mixed_data_1() {
-        // to be clear. The constructed case here can't (well, shouldn't) happen in our use case, since we
-        // always parse a complete line. The real world case is more like in: test_try_from_w_mixed_data_2
+    pub fn test_try_from_w_mixed_data() {
         let mut c = DataCellRow::new();
-        let vc1 = DataCell::new_without_data(Value::string_default(), String::from("foo"), 0);
-        let vc2 = DataCell::new_without_data(Value::string_default(), String::from("bar"), 1);
+        let vc1 = DataCell::new(ValueType::String, String::from("foo"), 0, Value::None);
+        let vc2 = DataCell::new(ValueType::String, String::from("bar"), 1, Value::None);
         let vc3 = DataCell::new(
-            Value::string_default(),
+            ValueType::String,
             String::from("col3"),
-            3,
-            Some(Value::String(String::from("baz"))),
+            2,
+            Value::String(String::from("baz")),
         );
         c.0.push(vc1);
         c.0.push(vc2);
         c.0.push(vc3);
 
-        let r: DataValueRow = c.into();
-        println!("{:?}", r);
-    }
-
-    #[test]
-    pub fn test_try_from_w_mixed_data_2() {
-        let mut c = DataCellRow::new();
-        let vc1 = DataCell::new(Value::string_default(), String::from("foo"), 0, None);
-        let vc2 = DataCell::new(Value::string_default(), String::from("bar"), 1, None);
-        let vc3 = DataCell::new(
-            Value::string_default(),
-            String::from("col3"),
-            3,
-            Some(Value::String(String::from("baz"))),
-        );
-        c.0.push(vc1);
-        c.0.push(vc2);
-        c.0.push(vc3);
-
-        let r: DataValueRow = c.into();
-        println!("{:?}", r);
+        let mut res: DataValueRow = c.into();
+        assert_eq!(Value::String(String::from("baz")), res.0.pop().unwrap());
+        assert_eq!(Value::None, res.0.pop().unwrap());
+        assert_eq!(Value::None, res.0.pop().unwrap());
     }
 
     #[test]
@@ -173,10 +158,10 @@ mod tests {
         let mut c = DataCellRow::new();
 
         let vc1 = DataCell::new(
-            Value::string_default(),
+            ValueType::String,
             String::from("foo"),
             123,
-            Some(Value::String(String::from("meh"))),
+            Value::String(String::from("meh")),
         );
         c.0.push(vc1);
 
@@ -189,10 +174,10 @@ mod tests {
         let mut c = DataCellRow::new();
 
         let vc1 = DataCell::new(
-            Value::string_default(),
+            ValueType::String,
             String::from("foo"),
             123,
-            Some(Value::String(String::from("meh"))),
+            Value::String(String::from("meh")),
         );
         c.0.push(vc1);
 

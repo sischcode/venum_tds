@@ -1,0 +1,89 @@
+{
+    "comment": "pass1",
+    "transformers": [{
+        "type": "deleteItems",
+        "cfg": [0, 1]
+    }, {
+        "type": "splitItem",
+        "cfg": {
+            "idx": 2,
+            "spec": {
+                "name": "pattern",
+                "pattern": "(\\d+\\.\\d+) \\(([[:alpha:]].+)\\)"
+            },
+            "deleteAfterSplit": true,
+            "targetLeft": { "idx": 10, "header": "from_2_left", "targetType": "Float32" },
+            "targetRight": { "idx": 11, "header": "from_2_right", "targetType": "String" }
+        }
+    }, {
+        "type": "splitItem",
+        "cfg": {
+            "idx": 3,
+            "spec": {
+                "name": "separatorChar",
+                "char": ";"
+            },
+            "deleteAfterSplit": true,
+            "targetLeft": { "idx": 20, "header": "from_3_left", "targetType": "Float32" },
+            "targetRight": { "idx": 21, "header": "from_3_right", "targetType": "String" }
+        }
+    }, {
+        "type": "addItem",
+        "cfg": {
+            "spec": {
+                "name": "static",
+                "value": "Europe"
+            },
+            "target": { "idx": 22, "header": "Region", "targetType": "String" }
+        }
+    }, {
+        "type": "addItem",
+        "cfg": {
+            "spec": {
+                "name": "static",
+                "value": "1.123"
+            },
+            "target": { "idx": 23, "header": "Magic Number", "targetType": "Float32" }
+        }
+    }, {
+        "type": "addItem",
+        "cfg": {
+            "spec": {
+                "name": "Runtime",
+                "rtValue": "CurrentDateTimeUtcAsFixedOffset",
+                "asSingleton": "false"
+            },
+            "target": { "idx": 24, "header": "Runtime DateTime 1", "targetType": "DateTime" }
+        }
+    }, {
+        "type": "addItem",
+        "cfg": {
+            "spec": {
+                "name": "Runtime",
+                "rtValue": "CurrentDateTimeUtcAsFixedOffset",
+                "asSingleton": "true"
+            },
+            "target": { "idx": 25, "header": "Runtime DateTime 2" }
+        }
+    }, {
+        "type": "addItem",
+        "cfg": {
+            "spec": {
+                "name": "Meta",
+                "key": "account_id"
+            },
+            "target": { "idx": 26, "header": "Account Id" }
+        }
+    }],
+    "orderItems": [
+        { "from": 10, "to": 0 },
+        { "from": 11, "to": 1 },
+        { "from": 20, "to": 2 },
+        { "from": 21, "to": 3 },
+        { "from": 22, "to": 4 },
+        { "from": 23, "to": 5 },
+        { "from": 24, "to": 6 },
+        { "from": 25, "to": 7 },
+        { "from": 26, "to": 8 }
+    ]
+}
