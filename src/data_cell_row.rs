@@ -5,7 +5,7 @@ use crate::errors::{DataAccessErrors, Result, VenumTdsError};
 use super::data_cell::DataCell;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct DataCellRow(Vec<DataCell>);
+pub struct DataCellRow(pub Vec<DataCell>); // TODO: we actually don't want this to be public, but we still have code in patti_csv that relies on it.
 
 impl DataCellRow {
     pub fn new() -> Self {
