@@ -5,7 +5,7 @@ use crate::errors::{DataAccessErrors, Result, VenumTdsError};
 use super::data_cell::DataCell;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct DataCellRow(pub Vec<DataCell>);
+pub struct DataCellRow(Vec<DataCell>);
 
 impl DataCellRow {
     pub fn new() -> Self {
@@ -49,6 +49,10 @@ impl DataCellRow {
 
     pub fn push(&mut self, elem: DataCell) {
         self.0.push(elem);
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 }
 

@@ -1,10 +1,12 @@
+use std::fmt::Debug;
+
 use venum::venum::{Value, ValueType};
 
 use crate::data_cell::DataCell;
 use crate::errors::{Result, SplitError, TransformErrors, VenumTdsError};
 use crate::transform::value::spliting::ValueSplit;
 
-pub trait SplitDataCell {
+pub trait SplitDataCell: Debug {
     fn split(&self, item: &DataCell) -> Result<(DataCell, DataCell)>;
 }
 
@@ -30,6 +32,7 @@ fn converse_to(val: &Value, type_info: &ValueType) -> Result<Value> {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct SplitDataCellUsingValueSplit<S: ValueSplit> {
     pub splitter: S,
     pub target_left: DataCell,
@@ -105,7 +108,7 @@ mod tests {
         );
 
         let split_using = SplitDataCellUsingValueSplit {
-            splitter: ValueStringRegexPairSplit::from(
+            splitter: ValueStringRegexPairSplit::new(
                 "(\\d+\\.\\d+).*(\\d+\\.\\d+)".to_string(),
                 true,
             )

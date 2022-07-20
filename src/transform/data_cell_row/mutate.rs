@@ -1,11 +1,18 @@
+use std::fmt::Debug;
+
+use venum::venum::Value;
+
 use crate::{
     data_cell::DataCell,
     data_cell_row::DataCellRow,
     errors::{ContainerOpsErrors, Result, VenumTdsError},
-    transform::data_cell::splitting::SplitDataCell,
+    transform::{
+        data_cell::splitting::SplitDataCell,
+        util::chrono_utils::utc_datetime_as_fixed_offset_datetime,
+    },
 };
 
-pub trait TransrichDataCellRowInplace {
+pub trait TransrichDataCellRowInplace: Debug {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()>;
 }
 
@@ -43,11 +50,6 @@ impl TransrichDataCellRowInplace for DeleteItemAtIdx {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "jsonconf", derive(serde::Deserialize))]
-pub enum RuntimeValue {
-    CurrentDateTimeUTC,
-}
-
 pub struct AddItemStatic(pub DataCell);
 impl TransrichDataCellRowInplace for AddItemStatic {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
@@ -56,6 +58,22 @@ impl TransrichDataCellRowInplace for AddItemStatic {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct AddItemMetadata(pub DataCell);
+impl TransrichDataCellRowInplace for AddItemMetadata {
+    fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
+        data_cell_row.push(self.0.clone());
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "jsonconf", derive(serde::Deserialize))]
+pub enum RuntimeValue {
+    CurrentDateTimeUtcAsFixedOffset,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct AddItemRuntime {
     pub header: Option<String>,
     pub idx: usize,
@@ -64,19 +82,48 @@ pub struct AddItemRuntime {
 impl TransrichDataCellRowInplace for AddItemRuntime {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
         match self.rtv {
-            RuntimeValue::CurrentDateTimeUTC => {
-                let add = DataCell::new(
+            RuntimeValue::CurrentDateTimeUtcAsFixedOffset => {
+                let curr_date_cell = DataCell::new(
                     venum::venum::ValueType::DateTime,
-                    self.header.unwrap_or_else(|| self.idx.to_string()),
+                    self.header.clone().unwrap_or_else(|| self.idx.to_string()),
                     self.idx,
-                    chrono::offset::Utc::now(),
+                    Value::DateTime(utc_datetime_as_fixed_offset_datetime(
+                        chrono::offset::Utc::now(),
+                    )),
                 );
+                data_cell_row.push(curr_date_cell);
                 Ok(())
             }
         }
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct AddItemRuntimeSingleton(DataCell);
+impl AddItemRuntimeSingleton {
+    pub fn new(header: Option<String>, idx: usize, rtv: RuntimeValue) -> Self {
+        let new_cell = match rtv {
+            RuntimeValue::CurrentDateTimeUtcAsFixedOffset => DataCell::new(
+                venum::venum::ValueType::DateTime,
+                header.unwrap_or_else(|| idx.to_string()),
+                idx,
+                Value::DateTime(utc_datetime_as_fixed_offset_datetime(
+                    chrono::offset::Utc::now(),
+                )),
+            ),
+        };
+
+        Self { 0: new_cell }
+    }
+}
+impl TransrichDataCellRowInplace for AddItemRuntimeSingleton {
+    fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
+        data_cell_row.push(self.0.clone());
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct SplitItemAtIdx<S: SplitDataCell> {
     pub idx: usize,
     pub splitter: S,
@@ -120,25 +167,25 @@ mod tests {
         let m = MutateItemIdx::new(0, 1);
 
         let mut c = DataCellRow::new();
-        c.0.push(DataCell::new_without_data(
+        c.push(DataCell::new_without_data(
             ValueType::Bool,
             String::from("col1"),
             0,
         ));
 
         m.transrich(&mut c).unwrap();
-        assert_eq!(1, c.0.first().unwrap().idx);
+        assert_eq!(1, c.get_by_idx(1).unwrap().idx);
     }
 
     #[test]
     fn test_delete_from_container() {
         let mut c = DataCellRow::new();
-        c.0.push(DataCell::new_without_data(
+        c.push(DataCell::new_without_data(
             ValueType::Bool,
             String::from("col1"),
             0,
         ));
-        c.0.push(DataCell::new_without_data(
+        c.push(DataCell::new_without_data(
             ValueType::Bool,
             String::from("col2"),
             1,
@@ -150,7 +197,7 @@ mod tests {
         let container_transricher2 = DeleteItemAtIdx(1);
         container_transricher2.transrich(&mut c).unwrap();
 
-        assert_eq!(0, c.0.len());
+        assert_eq!(0, c.len());
     }
 
     #[test]
@@ -162,7 +209,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_to_container() {
+    fn test_add_item_static() {
         let mut c = DataCellRow::new();
         let container_transricher = AddItemStatic(DataCell::new_without_data(
             ValueType::Bool,
@@ -171,18 +218,69 @@ mod tests {
         ));
         container_transricher.transrich(&mut c).unwrap();
 
-        assert_eq!(1, c.0.len());
+        assert_eq!(1, c.len());
+    }
+
+    #[test]
+    fn test_add_item_runtime() {
+        let mut c1 = DataCellRow::new();
+        let container_transricher = AddItemRuntime {
+            header: Some(String::from("col1")),
+            idx: 0,
+            rtv: RuntimeValue::CurrentDateTimeUtcAsFixedOffset,
+        };
+        container_transricher.transrich(&mut c1).unwrap();
+        assert_eq!(1, c1.len());
+        // println!("{:?}", c1.get_by_idx(0).unwrap().get_data());
+
+        let mut c2 = DataCellRow::new();
+        container_transricher.transrich(&mut c2).unwrap();
+        assert_eq!(1, c2.len());
+        // println!("{:?}", c2.get_by_idx(0).unwrap().get_data());
+
+        // In essence, that these are not the same (intentionally!), means,
+        // that the DateTime Value is "lazily" constructed, whenever "transrich"
+        // is called internally
+        assert_ne!(
+            c1.get_by_idx(0).unwrap().get_data(),
+            c2.get_by_idx(0).unwrap().get_data()
+        );
+    }
+
+    #[test]
+    fn test_add_item_runtime_singleton() {
+        let mut c1 = DataCellRow::new();
+        let container_transricher = AddItemRuntimeSingleton::new(
+            Some(String::from("col1")),
+            0,
+            RuntimeValue::CurrentDateTimeUtcAsFixedOffset,
+        );
+        container_transricher.transrich(&mut c1).unwrap();
+        assert_eq!(1, c1.len());
+        // println!("{:?}", c1.get_by_idx(0).unwrap().get_data());
+
+        let mut c2 = DataCellRow::new();
+        container_transricher.transrich(&mut c2).unwrap();
+        assert_eq!(1, c2.len());
+        // println!("{:?}", c2.get_by_idx(0).unwrap().get_data());
+
+        // These should be the same, since we build the DateTime in the
+        // new() and then store it.
+        assert_eq!(
+            c1.get_by_idx(0).unwrap().get_data(),
+            c2.get_by_idx(0).unwrap().get_data()
+        );
     }
 
     #[test]
     fn test_combined() {
         let mut c = DataCellRow::new();
-        c.0.push(DataCell::new_without_data(
+        c.push(DataCell::new_without_data(
             ValueType::Bool,
             String::from("col1"),
             0,
         ));
-        c.0.push(DataCell::new_without_data(
+        c.push(DataCell::new_without_data(
             ValueType::Bool,
             String::from("col2"),
             1,
@@ -205,15 +303,18 @@ mod tests {
             .collect::<Result<Vec<()>>>()
             .unwrap();
 
-        assert_eq!(1, c.0.len());
-        assert_eq!(10, c.0.first().unwrap().get_idx());
-        assert_eq!(String::from("col1"), c.0.first().unwrap().get_name());
+        assert_eq!(1, c.len());
+        assert_eq!(10, c.get_by_idx(10).unwrap().get_idx());
+        assert_eq!(
+            String::from("col1"),
+            c.get_by_name("col1").unwrap().get_name()
+        );
     }
 
     #[test]
     pub fn test_split_container_item_using_value_string_separator_char_divider() {
         let mut c = DataCellRow::new();
-        c.0.push(DataCell::new(
+        c.push(DataCell::new(
             ValueType::String,
             String::from("col1"),
             0,
@@ -237,7 +338,7 @@ mod tests {
 
         split_item_at_idx.transrich(&mut c).unwrap();
 
-        assert_eq!(3, c.0.len());
+        assert_eq!(3, c.len());
         assert_eq!(&Value::Float32(32.3), c.get_by_idx(1).unwrap().get_data());
         assert_eq!(&Value::Int8(1_i8), c.get_by_idx(2).unwrap().get_data());
     }
@@ -245,7 +346,7 @@ mod tests {
     #[test]
     pub fn test_split_container_item_using_value_string_separator_char_divider_delete_src() {
         let mut c = DataCellRow::new();
-        c.0.push(DataCell::new(
+        c.push(DataCell::new(
             ValueType::String,
             String::from("col1"),
             0,
@@ -269,7 +370,7 @@ mod tests {
 
         div_at.transrich(&mut c).unwrap();
 
-        assert_eq!(2, c.0.len()); // <-- we deleted the original
+        assert_eq!(2, c.len()); // <-- we deleted the original
         assert_eq!(&Value::Float32(32.3), c.get_by_idx(1).unwrap().get_data());
         assert_eq!(&Value::Int8(1_i8), c.get_by_idx(2).unwrap().get_data());
     }
@@ -277,7 +378,7 @@ mod tests {
     #[test]
     pub fn test_split_container_item_using_value_string_separator_char_divider_none() {
         let mut c = DataCellRow::new();
-        c.0.push(DataCell::new_without_data(
+        c.push(DataCell::new_without_data(
             ValueType::String,
             String::from("col1"),
             0,
@@ -300,7 +401,7 @@ mod tests {
 
         split_item_at_idx.transrich(&mut c).unwrap();
 
-        assert_eq!(3, c.0.len());
+        assert_eq!(3, c.len());
         assert_eq!(&Value::None, c.get_by_idx(1).unwrap().get_data());
         assert_eq!(&Value::None, c.get_by_idx(2).unwrap().get_data());
     }
@@ -308,7 +409,7 @@ mod tests {
     #[test]
     pub fn test_split_container_item_using_value_string_separator_char_divider_none_delete_src() {
         let mut c = DataCellRow::new();
-        c.0.push(DataCell::new_without_data(
+        c.push(DataCell::new_without_data(
             ValueType::String,
             String::from("col1"),
             0,
@@ -331,7 +432,7 @@ mod tests {
 
         split_item_at_idx.transrich(&mut c).unwrap();
 
-        assert_eq!(2, c.0.len()); // <--- !!!
+        assert_eq!(2, c.len()); // <--- !!!
         assert_eq!(&Value::None, c.get_by_idx(1).unwrap().get_data());
         assert_eq!(&Value::None, c.get_by_idx(2).unwrap().get_data());
     }
@@ -343,7 +444,7 @@ mod tests {
     pub fn test_split_container_item_using_value_string_separator_char_divider_none_but_split_none_is_false(
     ) {
         let mut c = DataCellRow::new();
-        c.0.push(DataCell::new_without_data(
+        c.push(DataCell::new_without_data(
             ValueType::String,
             String::from("col1"),
             0,

@@ -1,7 +1,10 @@
+use std::fmt::Debug;
+
 use crate::{data_cell_row::DataCellRow, errors::Result};
 
 use super::mutate::TransrichDataCellRowInplace;
 
+#[derive(Debug)]
 pub struct TransrichPass {
     pub transformer: Vec<Box<dyn TransrichDataCellRowInplace>>,
     pub order: Option<Vec<Box<dyn TransrichDataCellRowInplace>>>,
@@ -91,7 +94,7 @@ mod tests {
 
         trp.transrich(&mut data).unwrap();
 
-        assert_eq!(2, data.0.len());
+        assert_eq!(2, data.len());
         assert_eq!(Value::Float32(10.10), data.get_by_idx(0).unwrap().data);
         assert_eq!(
             Value::String(String::from("CHF")),
@@ -141,7 +144,7 @@ mod tests {
 
         trp.transrich(&mut data).unwrap();
 
-        assert_eq!(2, data.0.len());
+        assert_eq!(2, data.len());
         assert_eq!(Value::Float32(10.10), data.get_by_idx(0).unwrap().data);
         assert_eq!(
             Value::String(String::from("CHF")),
@@ -198,7 +201,7 @@ mod tests {
 
         passes_config.transrich(&mut data).unwrap();
 
-        assert_eq!(2, data.0.len());
+        assert_eq!(2, data.len());
         assert_eq!(Value::Float32(10.10), data.get_by_idx(0).unwrap().data);
         assert_eq!(
             Value::String(String::from("CHF")),

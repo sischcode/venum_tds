@@ -27,14 +27,22 @@ pub struct SplitItemConfig {
     pub delete_after_split: bool,
     pub target_left: ItemTargetConfig,
     pub target_right: ItemTargetConfig,
+    // TODO: configurable split_none option
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(tag = "name", rename_all = "camelCase")]
 pub enum AddItemType {
-    Meta { key: String },
-    Static { value: String },
-    Runtime { rt_value: RuntimeValue },
+    Meta {
+        key: String,
+    },
+    Static {
+        value: String,
+    },
+    Runtime {
+        rt_value: RuntimeValue,
+        as_singleton: Option<bool>,
+    },
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]

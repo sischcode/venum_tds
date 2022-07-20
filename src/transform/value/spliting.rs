@@ -1,17 +1,19 @@
+use std::fmt::Debug;
+
 use regex::Regex;
 use venum::venum::Value;
 
 use crate::errors::{Result, SplitError, TransformErrors, VenumTdsError};
 
-pub trait ValueSplit {
+pub trait ValueSplit: Debug {
     fn split(&self, src: &Value) -> Result<(Value, Value)>;
 }
 
-pub trait ValueSplitN {
+pub trait ValueSplitN: Debug {
     fn split_n(&self, src: &Value) -> Result<Vec<Value>>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ValueStringSeparatorCharSplit {
     pub sep_char: char,
     pub split_none: bool,
@@ -59,7 +61,7 @@ impl ValueSplit for ValueStringSeparatorCharSplit {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ValueStringSeparatorCharSplitN {
     pub sep_char: char,
     pub split_none: bool,
@@ -116,14 +118,14 @@ impl ValueSplitN for ValueStringSeparatorCharSplitN {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ValueStringRegexPairSplit {
     pub re: Regex,
     pub split_none: bool,
 }
 
 impl ValueStringRegexPairSplit {
-    pub fn from(regex_pattern: String, split_none: bool) -> Result<Self> {
+    pub fn new(regex_pattern: String, split_none: bool) -> Result<Self> {
         let re = Regex::new(regex_pattern.as_str()).map_err(|e| {
             let mut err_msg = format!("{}", e);
             err_msg.push_str(" (RegexPairSplitter, ERROR_ON_REGEX_COMPILE)");
@@ -297,7 +299,7 @@ mod tests {
     #[test]
     fn test_split_regex_pair() {
         let sep_res =
-            ValueStringRegexPairSplit::from("(\\d+\\.\\d+).*(\\d+\\.\\d+)".to_string(), true);
+            ValueStringRegexPairSplit::new("(\\d+\\.\\d+).*(\\d+\\.\\d+)".to_string(), true);
         assert!(sep_res.is_ok());
         let sep = sep_res.unwrap();
 
@@ -312,7 +314,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "Split(SplitError { msg: \"No captures, but we need exactly two.\"")]
     fn test_split_regex_err_no_captures() {
-        let sep_res = ValueStringRegexPairSplit::from(
+        let sep_res = ValueStringRegexPairSplit::new(
             "(\\d+\\.\\d+).*(\\d+\\.\\d+).*(\\d+\\.\\d+)".to_string(),
             true,
         );
@@ -328,7 +330,7 @@ mod tests {
         expected = "Split(SplitError { msg: \"1 capture group(s), but we need exactly two.\""
     )]
     fn test_split_regex_err_too_few_capture_groups() {
-        let sep_res = ValueStringRegexPairSplit::from("(\\d+\\.\\d+)".to_string(), true);
+        let sep_res = ValueStringRegexPairSplit::new("(\\d+\\.\\d+)".to_string(), true);
         assert!(sep_res.is_ok());
         let sep = sep_res.unwrap();
 
@@ -339,6 +341,6 @@ mod tests {
     #[test]
     #[should_panic(expected = "Transform(Generic { msg: \"regex parse error")]
     fn test_split_regex_pair_illegal_regex() {
-       ValueStringRegexPairSplit::from("FWPUJWDJW/)!(!()?))".to_string(), true).unwrap();        
+       ValueStringRegexPairSplit::new("FWPUJWDJW/)!(!()?))".to_string(), true).unwrap();        
     }
 }
