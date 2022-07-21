@@ -54,6 +54,10 @@ impl DataCellRow {
     pub fn len(&self) -> usize {
         self.0.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl IntoIterator for DataCellRow {

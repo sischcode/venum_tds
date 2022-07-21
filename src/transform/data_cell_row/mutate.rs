@@ -113,7 +113,7 @@ impl AddItemRuntimeSingleton {
             ),
         };
 
-        Self { 0: new_cell }
+        Self(new_cell)
     }
 }
 impl TransrichDataCellRowInplace for AddItemRuntimeSingleton {

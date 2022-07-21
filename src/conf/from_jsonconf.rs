@@ -63,8 +63,8 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, Value>>)> for T
                                         sep_char: char,
                                         split_none: true, // TODO: config
                                     },
-                                    target_left: target_left,
-                                    target_right: target_right,
+                                    target_left,
+                                    target_right,
                                 },
                             }));
                         }
@@ -74,8 +74,8 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, Value>>)> for T
                                 idx: cfg.idx,
                                 splitter: SplitDataCellUsingValueSplit {
                                     splitter: ValueStringRegexPairSplit::new(pattern, true)?,
-                                    target_left: target_left,
-                                    target_right: target_right,
+                                    target_left,
+                                    target_right,
                                 },
                             }));
                         }
@@ -120,7 +120,7 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, Value>>)> for T
                             rt_value,
                             as_singleton,
                         } => {
-                            if as_singleton.unwrap_or_else(|| false) {
+                            if as_singleton.unwrap_or(false) {
                                 transrichers.push(Box::new(AddItemRuntimeSingleton::new(
                                     cfg.target.header,
                                     cfg.target.idx,
