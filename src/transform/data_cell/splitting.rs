@@ -18,10 +18,7 @@ fn converse_to(val: &Value, type_info: &ValueType) -> Result<Value> {
         }
         Value::None => Ok(Value::None),
         // we have a String variant as src type try converting it to the target type
-        Value::String(s) => {
-            let transf_val = Value::from_string_with_templ(s, type_info)?;
-            Ok(transf_val)
-        }
+        Value::String(s) => Value::from_str_and_type(s, type_info).map_err(VenumTdsError::from),
         // TODO We can do better, but we don't support arbitrary convertions for now...
         _ => Err(VenumTdsError::Transform(TransformErrors::Split(
             SplitError::new(

@@ -113,7 +113,7 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, Value>>)> for T
                                     .header
                                     .unwrap_or_else(|| cfg.target.idx.to_string()),
                                 cfg.target.idx,
-                                Value::from_string_with_templ(&value, &cfg.target.target_type)?,
+                                Value::from_str_and_type(&value, &cfg.target.target_type)?,
                             ))));
                         }
                         AddItemType::Runtime {
