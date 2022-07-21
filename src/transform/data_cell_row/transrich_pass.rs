@@ -11,7 +11,7 @@ pub struct TransrichPass {
 }
 
 impl TransrichPass {
-    pub fn transrich(&mut self, container: &mut DataCellRow) -> Result<()> {
+    pub fn transrich(&self, container: &mut DataCellRow) -> Result<()> {
         self.transformer
             .iter()
             .try_for_each(|tri| tri.transrich(container))?;
@@ -28,9 +28,9 @@ pub struct TransrichPassesConfig {
 }
 
 impl TransrichPassesConfig {
-    pub fn transrich(&mut self, container: &mut DataCellRow) -> Result<()> {
+    pub fn transrich(&self, container: &mut DataCellRow) -> Result<()> {
         self.passes
-            .iter_mut()
+            .iter()
             .try_for_each(|pass| pass.transrich(container))
     }
 }
@@ -57,7 +57,7 @@ mod tests {
 
     #[test]
     fn test_transrich_pass_del_after_split() {
-        let mut trp: TransrichPass = TransrichPass {
+        let trp: TransrichPass = TransrichPass {
             transformer: vec![Box::new(SplitItemAtIdx {
                 delete_source_item: true,
                 idx: 0,
@@ -104,7 +104,7 @@ mod tests {
 
     #[test]
     fn test_transrich_pass_remain_after_split_then_delete() {
-        let mut trp: TransrichPass = TransrichPass {
+        let trp: TransrichPass = TransrichPass {
             transformer: vec![
                 Box::new(SplitItemAtIdx {
                     delete_source_item: false,
@@ -195,7 +195,7 @@ mod tests {
             Value::String(String::from("10.10 CHF")),
         ));
 
-        let mut passes_config = TransrichPassesConfig {
+        let passes_config = TransrichPassesConfig {
             passes: vec![trp1, trp2],
         };
 

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use super::jsonconf::ConfigRoot;
 use venum::venum::Value;
 
 use crate::{
@@ -13,17 +14,17 @@ use crate::{
                 AddItemRuntime, AddItemRuntimeSingleton, AddItemStatic, DeleteItemAtIdx,
                 MutateItemIdx, SplitItemAtIdx, TransrichDataCellRowInplace,
             },
-            transrich_pass::TransrichPass,
+            transrich_pass::{TransrichPass, TransrichPassesConfig},
         },
         value::spliting::{ValueStringRegexPairSplit, ValueStringSeparatorCharSplit},
     },
 };
 
-impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, Value>>)> for TransrichPass {
+impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, Value>>)> for TransrichPass {
     type Error = VenumTdsError;
 
     fn try_from(
-        tuple: (TransformEnrichPassConfig, Option<&HashMap<String, Value>>),
+        tuple: (TransformEnrichPassConfig, &Option<HashMap<String, Value>>),
     ) -> Result<Self> {
         let (tepc, enrich_map) = tuple;
 
@@ -94,6 +95,7 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, Value>>)> for T
                                     .unwrap_or_else(|| cfg.target.idx.to_string()),
                                 cfg.target.idx,
                                 enrich_map
+                                    .as_ref()
                                     .unwrap()
                                     .get(&key)
                                     .ok_or_else(|| VenumTdsError::Generic {
@@ -163,7 +165,34 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, Value>>)> for T
 impl TryFrom<TransformEnrichPassConfig> for TransrichPass {
     type Error = VenumTdsError;
     fn try_from(tepc: TransformEnrichPassConfig) -> Result<Self> {
-        TransrichPass::try_from((tepc, None))
+        TransrichPass::try_from((tepc, &None))
+    }
+}
+
+impl TryFrom<(ConfigRoot, &Option<HashMap<String, Value>>)> for TransrichPassesConfig {
+    type Error = VenumTdsError;
+
+    fn try_from(tuple: (ConfigRoot, &Option<HashMap<String, Value>>)) -> Result<Self> {
+        let (mut config, enrich_map) = tuple;
+        if config.0.is_empty() {
+            return Ok(TransrichPassesConfig { passes: Vec::new() });
+        }
+
+        let mut v: Vec<TransrichPass> = Vec::with_capacity(config.0.len());
+        while !config.0.is_empty() {
+            let tepc = config.0.pop().expect("never empty!");
+            let trp = TransrichPass::try_from((tepc, enrich_map))?;
+            v.push(trp)
+        }
+        v.reverse();
+        Ok(TransrichPassesConfig { passes: v })
+    }
+}
+
+impl TryFrom<ConfigRoot> for TransrichPassesConfig {
+    type Error = VenumTdsError;
+    fn try_from(config: ConfigRoot) -> Result<Self> {
+        TransrichPassesConfig::try_from((config, &None))
     }
 }
 
@@ -394,7 +423,7 @@ mod tests {
         let mut metadata: HashMap<String, Value> = HashMap::with_capacity(1);
         metadata.insert(String::from("account_id"), Value::Int32(1000));
 
-        let test_pass = TransrichPass::try_from((dsl_fmt, Some(&metadata))).unwrap();
+        let test_pass = TransrichPass::try_from((dsl_fmt, &Some(metadata))).unwrap();
 
         assert_eq!(format!("{:?}", exp), format!("{:?}", test_pass));
     }

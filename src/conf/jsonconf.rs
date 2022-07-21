@@ -76,9 +76,7 @@ pub struct TransformEnrichPassConfig {
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct ConfigRoot {
-    pub passes: Vec<TransformEnrichPassConfig>,
-}
+pub struct ConfigRoot(pub Vec<TransformEnrichPassConfig>);
 
 #[cfg(test)]
 mod tests {
@@ -342,125 +340,122 @@ mod tests {
 
     #[test]
     fn test_config_root_config() {
-        let data = r#"
-        { 
-            "passes": [{
-                "comment": "pass1",
-                "transformers": [{
-                    "type": "deleteItems",
-                    "cfg": [0, 1]
-                }, {
-                    "type": "splitItem",
-                    "cfg": {
-                        "idx": 2,
-                        "spec": {
-                            "name": "separatorChar",
-                            "char": ";"
-                        },
-                        "deleteAfterSplit": true,
-                        "targetLeft": {
-                            "idx": 10,
-                            "header": "some_float32_left",
-                            "targetType": "Float32"
-                        },
-                        "targetRight": {
-                            "idx": 11,
-                            "header": "some_string_right",
-                            "targetType": "String"
-                        }
-                    }
-                }],
-                "orderItems": [
-                    { "from": 3, "to": 0 },
-                    { "from": 4, "to": 1 },
-                    { "from": 10, "to": 2 }
-                ]
+        let data = r#"        
+        [{
+            "comment": "pass1",
+            "transformers": [{
+                "type": "deleteItems",
+                "cfg": [0, 1]
             }, {
-                "comment": "pass2",
-                "transformers": [{
-                    "type": "addItem",
-                    "cfg": {
-                        "spec": {
-                            "name": "static",
-                            "value": "Europe"
-                        },
-                        "target": {
-                            "idx": 12,
-                            "header": "Region",
-                            "targetType": "String"
-                        }
+                "type": "splitItem",
+                "cfg": {
+                    "idx": 2,
+                    "spec": {
+                        "name": "separatorChar",
+                        "char": ";"
+                    },
+                    "deleteAfterSplit": true,
+                    "targetLeft": {
+                        "idx": 10,
+                        "header": "some_float32_left",
+                        "targetType": "Float32"
+                    },
+                    "targetRight": {
+                        "idx": 11,
+                        "header": "some_string_right",
+                        "targetType": "String"
                     }
-                }],
-                "orderItems": [
-                    { "from": 12, "to": 3 }
-                ]
-            }]
-        }
+                }
+            }],
+            "orderItems": [
+                { "from": 3, "to": 0 },
+                { "from": 4, "to": 1 },
+                { "from": 10, "to": 2 }
+            ]
+        }, {
+            "comment": "pass2",
+            "transformers": [{
+                "type": "addItem",
+                "cfg": {
+                    "spec": {
+                        "name": "static",
+                        "value": "Europe"
+                    },
+                    "target": {
+                        "idx": 12,
+                        "header": "Region",
+                        "targetType": "String"
+                    }
+                }
+            }],
+            "orderItems": [
+                { "from": 12, "to": 3 }
+            ]
+        }]
+        
         "#;
 
         assert_eq!(
-            ConfigRoot {
-                passes: vec![
-                    TransformEnrichPassConfig {
-                        comment: Some(String::from("pass1")),
-                        transformers: vec![
-                            TransformerConfig::DeleteItems {
-                                cfg: vec![0_usize, 1_usize]
-                            },
-                            TransformerConfig::SplitItem {
-                                cfg: SplitItemConfig {
-                                    idx: 2,
-                                    spec: SplitterType::SeparatorChar { char: ';' },
-                                    delete_after_split: true,
-                                    target_left: ItemTargetConfig {
-                                        header: Some(String::from("some_float32_left")),
-                                        idx: 10_usize,
-                                        target_type: ValueType::Float32,
-                                    },
-                                    target_right: ItemTargetConfig {
-                                        header: Some(String::from("some_string_right")),
-                                        idx: 11_usize,
-                                        target_type: ValueType::String,
-                                    },
-                                }
-                            }
-                        ],
-                        order_items: Some(vec![
-                            OrderItemsEntry {
-                                from: 3_usize,
-                                to: 0_usize
-                            },
-                            OrderItemsEntry {
-                                from: 4_usize,
-                                to: 1_usize
-                            },
-                            OrderItemsEntry {
-                                from: 10_usize,
-                                to: 2_usize
-                            }
-                        ]),
-                    },
-                    TransformEnrichPassConfig {
-                        comment: Some(String::from("pass2")),
-                        transformers: vec![TransformerConfig::AddItem {
-                            cfg: AddItemConfig {
-                                spec: AddItemType::Static {
-                                    value: String::from("Europe")
+            ConfigRoot(vec![
+                TransformEnrichPassConfig {
+                    comment: Some(String::from("pass1")),
+                    transformers: vec![
+                        TransformerConfig::DeleteItems {
+                            cfg: vec![0_usize, 1_usize]
+                        },
+                        TransformerConfig::SplitItem {
+                            cfg: SplitItemConfig {
+                                idx: 2,
+                                spec: SplitterType::SeparatorChar { char: ';' },
+                                delete_after_split: true,
+                                target_left: ItemTargetConfig {
+                                    header: Some(String::from("some_float32_left")),
+                                    idx: 10_usize,
+                                    target_type: ValueType::Float32,
                                 },
-                                target: ItemTargetConfig {
-                                    header: Some(String::from("Region")),
-                                    idx: 12_usize,
-                                    target_type: ValueType::String
-                                }
+                                target_right: ItemTargetConfig {
+                                    header: Some(String::from("some_string_right")),
+                                    idx: 11_usize,
+                                    target_type: ValueType::String,
+                                },
                             }
-                        }],
-                        order_items: Some(vec![OrderItemsEntry {
-                            from: 12_usize,
-                            to: 3_usize
-                        }]),
-                    },
-                ]
-            },
+                        }
+                    ],
+                    order_items: Some(vec![
+                        OrderItemsEntry {
+                            from: 3_usize,
+                            to: 0_usize
+                        },
+                        OrderItemsEntry {
+                            from: 4_usize,
+                            to: 1_usize
+                        },
+                        OrderItemsEntry {
+                            from: 10_usize,
+                            to: 2_usize
+                        }
+                    ]),
+                },
+                TransformEnrichPassConfig {
+                    comment: Some(String::from("pass2")),
+                    transformers: vec![TransformerConfig::AddItem {
+                        cfg: AddItemConfig {
+                            spec: AddItemType::Static {
+                                value: String::from("Europe")
+                            },
+                            target: ItemTargetConfig {
+                                header: Some(String::from("Region")),
+                                idx: 12_usize,
+                                target_type: ValueType::String
+                            }
+                        }
+                    }],
+                    order_items: Some(vec![OrderItemsEntry {
+                        from: 12_usize,
+                        to: 3_usize
+                    }]),
+                },
+            ]),
             serde_json::from_str(data).expect("could not deserialize ")
         )
     }
