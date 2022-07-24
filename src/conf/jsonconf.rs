@@ -38,6 +38,7 @@ pub enum AddItemType {
     Static {
         value: String,
     },
+    #[serde(rename_all = "camelCase")]
     Runtime {
         rt_value: RuntimeValue,
         as_singleton: Option<bool>,
