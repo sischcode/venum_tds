@@ -42,7 +42,6 @@ impl SplitError {
 pub enum TransformErrors {
     Generic { msg: String },
     Split(SplitError),
-    // TODO: merge
 }
 
 #[derive(Debug, PartialEq, Display, Clone)]

@@ -42,7 +42,7 @@ impl DataCellRow {
             .iter()
             .position(|vec_elem| vec_elem.get_idx() == idx)
             .ok_or(VenumTdsError::DataAccess(
-                DataAccessErrors::IllegalIdxAccess { idx }, // TODO: better error...
+                DataAccessErrors::IllegalIdxAccess { idx },
             ))?;
         Ok(self.0.swap_remove(idx))
     }
@@ -66,23 +66,6 @@ impl IntoIterator for DataCellRow {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct DataValueRow(pub Vec<Value>);
-
-impl From<DataCellRow> for DataValueRow {
-    fn from(mut vcr: DataCellRow) -> Self {
-        // TODO: this is not really ...correct, depending on the definition.
-        //       we should probably insert the entries into the plain vector
-        //       in the correct index order from the source DataCellRow.
-        Self(
-            vcr.0
-                .iter_mut()
-                .map(|v| std::mem::take(&mut v.data))
-                .collect(),
-        )
     }
 }
 

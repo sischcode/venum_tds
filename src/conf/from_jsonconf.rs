@@ -274,6 +274,7 @@ mod tests {
                     23,
                     Value::Float32(1.123),
                 ))),
+                // // We can't rely test this, because of the dynamic nature...
                 // Box::new(AddItemRuntime {
                 //     header: Some(String::from("Runtime DateTime 1")),
                 //     idx: 24,
@@ -368,6 +369,7 @@ mod tests {
                         },
                     },
                 },
+                // // We can't rely test this, because of the dynamic nature...
                 // TransformerConfig::AddItem {
                 //     cfg: AddItemConfig {
                 //         spec: AddItemType::Runtime {
@@ -390,7 +392,7 @@ mod tests {
                 //         target: ItemTargetConfig {
                 //             idx: 25,
                 //             header: Some(String::from("Runtime DateTime 2")),
-                //             target_type: ValueType::DateTime, // TODO: not needed here
+                //             target_type: ValueType::DateTime, // strictly speaking, I thing we don't need the type info here
                 //         },
                 //     },
                 // },
@@ -402,7 +404,7 @@ mod tests {
                         target: ItemTargetConfig {
                             idx: 26,
                             header: Some(String::from("Account Id")),
-                            target_type: ValueType::Int32, // TODO: not needed here
+                            target_type: ValueType::Int32, // TODO: strictly speaking, I thing we don't need the type info here
                         },
                     },
                 },
