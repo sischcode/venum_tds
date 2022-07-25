@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use venum::venum::ValueType;
 
-use crate::transform::data_cell_row::mutate::RuntimeValue;
+use crate::transform::data_cell_row::mutate::{RuntimeValue, RuntimeValueStateful};
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(tag = "name", rename_all = "camelCase")]
@@ -42,6 +42,10 @@ pub enum AddItemType {
     Runtime {
         rt_value: RuntimeValue,
         as_singleton: Option<bool>,
+    },
+    #[serde(rename_all = "camelCase")]
+    RuntimeStateful {
+        rt_value: RuntimeValueStateful,
     },
 }
 

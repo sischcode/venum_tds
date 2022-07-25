@@ -11,8 +11,9 @@ use crate::{
         data_cell::splitting::SplitDataCellUsingValueSplit,
         data_cell_row::{
             mutate::{
-                AddItemRuntime, AddItemRuntimeSingleton, AddItemStatic, DeleteItemAtIdx,
-                MutateItemIdx, SplitItemAtIdx, TransrichDataCellRowInplace,
+                AddItemRuntime, AddItemRuntimeSingleton, AddItemRuntimeStatefulRowEnum,
+                AddItemStatic, DeleteItemAtIdx, MutateItemIdx, RuntimeValueStateful,
+                SplitItemAtIdx, TransrichDataCellRowInplace, TransrichDataCellRowInplaceStateful,
             },
             transrich_pass::{TransrichPass, TransrichPassesConfig},
         },
@@ -30,6 +31,8 @@ impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, Value>>)> for T
 
         let mut transrichers: Vec<Box<dyn TransrichDataCellRowInplace>> =
             Vec::with_capacity(tepc.transformers.len());
+        let mut transrichers_stateful: Vec<Box<dyn TransrichDataCellRowInplaceStateful>> =
+            Vec::new();
 
         for tc in tepc.transformers {
             match tc {
@@ -127,7 +130,7 @@ impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, Value>>)> for T
                                     cfg.target.header,
                                     cfg.target.idx,
                                     rt_value,
-                                )));
+                                )?));
                             } else {
                                 transrichers.push(Box::new(AddItemRuntime {
                                     header: cfg.target.header,
@@ -136,6 +139,16 @@ impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, Value>>)> for T
                                 }));
                             }
                         }
+                        AddItemType::RuntimeStateful { rt_value } => match rt_value {
+                            RuntimeValueStateful::RowEnumeration => {
+                                transrichers_stateful.push(Box::new(
+                                    AddItemRuntimeStatefulRowEnum::new(
+                                        cfg.target.header,
+                                        cfg.target.idx,
+                                    ),
+                                ));
+                            }
+                        },
                     }
                 }
             };
@@ -157,6 +170,7 @@ impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, Value>>)> for T
 
         Ok(TransrichPass {
             transformer: transrichers,
+            transformer_stateful: transrichers_stateful,
             order: ordering_opt,
         })
     }
@@ -292,6 +306,7 @@ mod tests {
                     Value::Int32(1000),
                 ))),
             ],
+            transformer_stateful: Vec::new(),
             order: Some(vec![
                 Box::new(MutateItemIdx { from: 10, to: 0 }),
                 Box::new(MutateItemIdx { from: 11, to: 1 }),

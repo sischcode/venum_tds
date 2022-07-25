@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use venum::venum::Value;
+use venum::venum::{Value, ValueType};
 
 use crate::{
     data_cell::DataCell,
@@ -14,6 +14,10 @@ use crate::{
 
 pub trait TransrichDataCellRowInplace: Debug {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()>;
+}
+
+pub trait TransrichDataCellRowInplaceStateful: Debug {
+    fn transrich(&mut self, data_cell_row: &mut DataCellRow) -> Result<()>;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -74,6 +78,46 @@ pub enum RuntimeValue {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "jsonconf", derive(serde::Deserialize))]
+pub enum RuntimeValueStateful {
+    RowEnumeration,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct AddItemRuntimeStatefulRowEnum {
+    num_invoke: Option<u128>,
+    pub header: Option<String>,
+    pub idx: usize,
+}
+impl TransrichDataCellRowInplaceStateful for AddItemRuntimeStatefulRowEnum {
+    fn transrich(&mut self, data_cell_row: &mut DataCellRow) -> Result<()> {
+        if self.num_invoke.is_none() {
+            self.num_invoke = Some(1);
+        } else {
+            self.num_invoke = self.num_invoke.map(|old| old + 1);
+        }
+        let curr_enum_cell = DataCell::new(
+            ValueType::UInt128,
+            self.header.clone().unwrap_or_else(|| self.idx.to_string()),
+            self.idx,
+            Value::UInt128(self.num_invoke.unwrap()), // we set it above!
+        );
+        data_cell_row.push(curr_enum_cell);
+
+        Ok(())
+    }
+}
+impl AddItemRuntimeStatefulRowEnum {
+    pub fn new(header: Option<String>, idx: usize) -> Self {
+        Self {
+            num_invoke: None,
+            header: header,
+            idx: idx,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct AddItemRuntime {
     pub header: Option<String>,
     pub idx: usize,
@@ -84,7 +128,7 @@ impl TransrichDataCellRowInplace for AddItemRuntime {
         match self.rtv {
             RuntimeValue::CurrentDateTimeUtcAsFixedOffset => {
                 let curr_date_cell = DataCell::new(
-                    venum::venum::ValueType::DateTime,
+                    ValueType::DateTime,
                     self.header.clone().unwrap_or_else(|| self.idx.to_string()),
                     self.idx,
                     Value::DateTime(utc_datetime_as_fixed_offset_datetime(
@@ -94,6 +138,9 @@ impl TransrichDataCellRowInplace for AddItemRuntime {
                 data_cell_row.push(curr_date_cell);
                 Ok(())
             }
+            // _ => Err(VenumTdsError::ContainerOps(ContainerOpsErrors::Generic {
+            //     msg: format!("{:?} not implemented. (idx={}", &self.rtv, &self.idx),
+            // })),
         }
     }
 }
@@ -101,21 +148,25 @@ impl TransrichDataCellRowInplace for AddItemRuntime {
 #[derive(Debug, Clone, PartialEq)]
 pub struct AddItemRuntimeSingleton(DataCell);
 impl AddItemRuntimeSingleton {
-    pub fn new(header: Option<String>, idx: usize, rtv: RuntimeValue) -> Self {
-        let new_cell = match rtv {
-            RuntimeValue::CurrentDateTimeUtcAsFixedOffset => DataCell::new(
-                venum::venum::ValueType::DateTime,
-                header.unwrap_or_else(|| idx.to_string()),
-                idx,
-                Value::DateTime(utc_datetime_as_fixed_offset_datetime(
-                    chrono::offset::Utc::now(),
-                )),
-            ),
-        };
-
-        Self(new_cell)
+    pub fn new(header: Option<String>, idx: usize, rtv: RuntimeValue) -> Result<Self> {
+        match rtv {
+            RuntimeValue::CurrentDateTimeUtcAsFixedOffset => {
+                Ok(AddItemRuntimeSingleton(DataCell::new(
+                    venum::venum::ValueType::DateTime,
+                    header.unwrap_or_else(|| idx.to_string()),
+                    idx,
+                    Value::DateTime(utc_datetime_as_fixed_offset_datetime(
+                        chrono::offset::Utc::now(),
+                    )),
+                )))
+            }
+            // _ => Err(VenumTdsError::ContainerOps(ContainerOpsErrors::Generic {
+            //     msg: format!("{:?} not implemented. (idx={}", &rtv, &idx),
+            // })),
+        }
     }
 }
+
 impl TransrichDataCellRowInplace for AddItemRuntimeSingleton {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
         data_cell_row.push(self.0.clone());
@@ -254,7 +305,9 @@ mod tests {
             Some(String::from("col1")),
             0,
             RuntimeValue::CurrentDateTimeUtcAsFixedOffset,
-        );
+        )
+        .unwrap();
+
         container_transricher.transrich(&mut c1).unwrap();
         assert_eq!(1, c1.len());
         // println!("{:?}", c1.get_by_idx(0).unwrap().get_data());
@@ -270,6 +323,25 @@ mod tests {
             c1.get_by_idx(0).unwrap().get_data(),
             c2.get_by_idx(0).unwrap().get_data()
         );
+    }
+
+    #[test]
+    fn test_add_item_runtime_stateful_rownum() {
+        let mut c1 = DataCellRow::new();
+
+        let mut container_transricher =
+            AddItemRuntimeStatefulRowEnum::new(Some(String::from("col1")), 0);
+
+        container_transricher.transrich(&mut c1).unwrap();
+        assert_eq!(1, c1.len());
+        // println!("{:?}", &c1);
+
+        let mut c2 = DataCellRow::new();
+        container_transricher.transrich(&mut c2).unwrap();
+        assert_eq!(1, c2.len());
+        // println!("{:?}", &c2);
+
+        assert_eq!(&Value::UInt128(2), c2.get_by_idx(0).unwrap().get_data());
     }
 
     #[test]

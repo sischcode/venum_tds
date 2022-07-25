@@ -2,18 +2,23 @@ use std::fmt::Debug;
 
 use crate::{data_cell_row::DataCellRow, errors::Result};
 
-use super::mutate::TransrichDataCellRowInplace;
+use super::mutate::{TransrichDataCellRowInplace, TransrichDataCellRowInplaceStateful};
 
 #[derive(Debug)]
 pub struct TransrichPass {
     pub transformer: Vec<Box<dyn TransrichDataCellRowInplace>>,
+    pub transformer_stateful: Vec<Box<dyn TransrichDataCellRowInplaceStateful>>,
     pub order: Option<Vec<Box<dyn TransrichDataCellRowInplace>>>,
 }
 
 impl TransrichPass {
-    pub fn transrich(&self, container: &mut DataCellRow) -> Result<()> {
+    pub fn transrich(&mut self, container: &mut DataCellRow) -> Result<()> {
         self.transformer
             .iter()
+            .try_for_each(|tri| tri.transrich(container))?;
+
+        self.transformer_stateful
+            .iter_mut()
             .try_for_each(|tri| tri.transrich(container))?;
 
         if let Some(orderings) = &self.order {
@@ -28,9 +33,9 @@ pub struct TransrichPassesConfig {
 }
 
 impl TransrichPassesConfig {
-    pub fn transrich(&self, container: &mut DataCellRow) -> Result<()> {
+    pub fn transrich(&mut self, container: &mut DataCellRow) -> Result<()> {
         self.passes
-            .iter()
+            .iter_mut()
             .try_for_each(|pass| pass.transrich(container))
     }
 }
@@ -57,7 +62,7 @@ mod tests {
 
     #[test]
     fn test_transrich_pass_del_after_split() {
-        let trp: TransrichPass = TransrichPass {
+        let mut trp: TransrichPass = TransrichPass {
             transformer: vec![Box::new(SplitItemAtIdx {
                 delete_source_item: true,
                 idx: 0,
@@ -78,6 +83,7 @@ mod tests {
                     ),
                 },
             })],
+            transformer_stateful: Vec::new(),
             order: Some(vec![
                 Box::new(MutateItemIdx { from: 1, to: 0 }), // CAUTION!!!
                 Box::new(MutateItemIdx { from: 2, to: 1 }), // You need to order from low to high!
@@ -104,7 +110,7 @@ mod tests {
 
     #[test]
     fn test_transrich_pass_remain_after_split_then_delete() {
-        let trp: TransrichPass = TransrichPass {
+        let mut trp: TransrichPass = TransrichPass {
             transformer: vec![
                 Box::new(SplitItemAtIdx {
                     delete_source_item: false,
@@ -128,6 +134,7 @@ mod tests {
                 }),
                 Box::new(DeleteItemAtIdx { 0: 0 }),
             ],
+            transformer_stateful: Vec::new(),
             order: Some(vec![
                 Box::new(MutateItemIdx { from: 1, to: 0 }), // CAUTION!!!
                 Box::new(MutateItemIdx { from: 2, to: 1 }), // You need to order from low to high!
@@ -175,6 +182,7 @@ mod tests {
                     ),
                 },
             })],
+            transformer_stateful: Vec::new(),
             order: Some(vec![
                 Box::new(MutateItemIdx { from: 0, to: 3 }), // move the old "column" out of the way
                 Box::new(MutateItemIdx { from: 1, to: 0 }),
@@ -183,8 +191,16 @@ mod tests {
         };
 
         let trp2: TransrichPass = TransrichPass {
-            transformer: vec![Box::new(DeleteItemAtIdx { 0: 3 })],
+            transformer: vec![Box::new(DeleteItemAtIdx { 0: 3 })], // we delete idx 3 here
+            transformer_stateful: vec![Box::new(AddItemRuntimeStatefulRowEnum::new(
+                Some(String::from("_ds_entity_row_num")),
+                2, // Stateful is running AFTER stateless, so we can recycle the index!
+            ))],
             order: None,
+        };
+
+        let mut passes_config = TransrichPassesConfig {
+            passes: vec![trp1, trp2],
         };
 
         let mut data = DataCellRow::new();
@@ -195,17 +211,15 @@ mod tests {
             Value::String(String::from("10.10 CHF")),
         ));
 
-        let passes_config = TransrichPassesConfig {
-            passes: vec![trp1, trp2],
-        };
-
+        // This is what we want to test!
         passes_config.transrich(&mut data).unwrap();
 
-        assert_eq!(2, data.len());
+        assert_eq!(3, data.len());
         assert_eq!(Value::Float32(10.10), data.get_by_idx(0).unwrap().data);
         assert_eq!(
             Value::String(String::from("CHF")),
             data.get_by_idx(1).unwrap().data
         );
+        assert_eq!(Value::UInt128(1), data.get_by_idx(2).unwrap().data);
     }
 }
