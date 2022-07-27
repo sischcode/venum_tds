@@ -72,7 +72,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_split_data_cell_using_value_split_sep_char_split() {
+    fn split_data_cell_using_value_split_sep_char_split() {
         let data = DataCell::new(
             ValueType::String,
             String::from("col1"),
@@ -96,7 +96,7 @@ mod tests {
     }
 
     #[test]
-    fn test_split_data_cell_using_value_split_regex_split() {
+    fn split_data_cell_using_value_split_regex_split() {
         let data = DataCell::new(
             ValueType::String,
             String::from("col1"),

@@ -60,31 +60,5 @@ impl DataCell {
 
 #[cfg(test)]
 mod tests {
-    use venum::venum::Value;
-
-    use super::*;
-
-    #[test]
-    fn test_indexed_on_data_cell() {
-        let d = DataCell::new(ValueType::Bool, String::from("col1"), 123, Value::None);
-        assert_eq!(123, d.get_idx());
-    }
-
-    #[test]
-    fn test_named_on_data_cell() {
-        let d = DataCell::new(ValueType::Bool, String::from("col1"), 123, Value::None);
-        assert_eq!("col1", d.get_name());
-    }
-
-    #[test]
-    fn test_typeinfo_on_data_cell() {
-        let d = DataCell::new(ValueType::Bool, String::from("col1"), 123, Value::None);
-        assert_eq!(&ValueType::Bool, d.get_type_info());
-    }
-
-    #[test]
-    fn test_data_on_data_cell() {
-        let d = DataCell::new(ValueType::Bool, String::from("col1"), 123, Value::None);
-        assert_eq!(&Value::None, d.get_data());
-    }
+    // TODO
 }

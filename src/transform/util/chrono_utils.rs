@@ -18,7 +18,7 @@ mod tests {
     use chrono::{FixedOffset, TimeZone, Utc};
 
     #[test]
-    fn test_utc_date_as_fixed_offset() {
+    fn utc_date_as_fixed_offset() {
         let utc_date = Utc.ymd(2022, 07, 20).and_hms_milli(10, 1, 1, 123);
 
         let fo_date = FixedOffset::east(0)
@@ -32,7 +32,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fixed_offset_date_as_utc() {
+    fn fixed_offset_date_as_utc() {
         let utc_date = Utc.ymd(2022, 07, 20).and_hms_milli(10, 1, 1, 123);
 
         let fo_date = FixedOffset::east(0)
@@ -46,7 +46,7 @@ mod tests {
     }
 
     #[test]
-    fn test_utc_date_to_fixed_offset() {
+    fn utc_date_to_fixed_offset() {
         let utc_date = Utc.ymd(2022, 07, 20).and_hms_milli(10, 1, 1, 123);
 
         // This is the same point in time as above, but with a two hour shift from the timezone

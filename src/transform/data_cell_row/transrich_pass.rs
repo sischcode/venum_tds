@@ -61,7 +61,7 @@ mod tests {
     };
 
     #[test]
-    fn test_transrich_pass_del_after_split() {
+    fn transrich_pass_del_after_split() {
         let mut trp: TransrichPass = TransrichPass {
             transformer: vec![Box::new(SplitItemAtIdx {
                 delete_source_item: true,
@@ -109,7 +109,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transrich_pass_remain_after_split_then_delete() {
+    fn transrich_pass_remain_after_split_then_delete() {
         let mut trp: TransrichPass = TransrichPass {
             transformer: vec![
                 Box::new(SplitItemAtIdx {
@@ -160,7 +160,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transrich_passes() {
+    fn transrich_passes() {
         let trp1: TransrichPass = TransrichPass {
             transformer: vec![Box::new(SplitItemAtIdx {
                 delete_source_item: false, // <--- !!!

@@ -21,6 +21,8 @@ use crate::{
     },
 };
 
+const SPLIT_NONE_DEFAULT: bool = true;
+
 impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, Value>>)> for TransrichPass {
     type Error = VenumTdsError;
 
@@ -58,26 +60,32 @@ impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, Value>>)> for T
                     );
 
                     match cfg.spec {
-                        SplitterType::SeparatorChar { char } => {
+                        SplitterType::SeparatorChar { char, split_none } => {
                             transrichers.push(Box::new(SplitItemAtIdx {
                                 delete_source_item: cfg.delete_after_split,
                                 idx: cfg.idx,
                                 splitter: SplitDataCellUsingValueSplit {
                                     splitter: ValueStringSeparatorCharSplit {
                                         sep_char: char,
-                                        split_none: true, // TODO: config
+                                        split_none: split_none.unwrap_or(SPLIT_NONE_DEFAULT),
                                     },
                                     target_left,
                                     target_right,
                                 },
                             }));
                         }
-                        SplitterType::Pattern { pattern } => {
+                        SplitterType::Pattern {
+                            pattern,
+                            split_none,
+                        } => {
                             transrichers.push(Box::new(SplitItemAtIdx {
                                 delete_source_item: cfg.delete_after_split,
                                 idx: cfg.idx,
                                 splitter: SplitDataCellUsingValueSplit {
-                                    splitter: ValueStringRegexPairSplit::new(pattern, true)?,
+                                    splitter: ValueStringRegexPairSplit::new(
+                                        pattern,
+                                        split_none.unwrap_or(SPLIT_NONE_DEFAULT),
+                                    )?,
                                     target_left,
                                     target_right,
                                 },
@@ -87,29 +95,28 @@ impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, Value>>)> for T
                 }
                 TransformerConfig::AddItem { cfg } => {
                     match cfg.spec {
-                        AddItemType::Meta { key } => {
-                            if enrich_map.is_none() {
+                        AddItemType::Meta { key } => match enrich_map {
+                            None => {
                                 return Err(VenumTdsError::Generic { msg: String::from("No metadata / enrichment map available, but at least needed for one transrichment") });
                             }
-                            transrichers.push(Box::new(AddItemStatic(DataCell::new(
-                                cfg.target.target_type.clone(),
-                                cfg.target
-                                    .header
-                                    .unwrap_or_else(|| cfg.target.idx.to_string()),
-                                cfg.target.idx,
-                                enrich_map
-                                    .as_ref()
-                                    .unwrap()
-                                    .get(&key)
-                                    .ok_or_else(|| VenumTdsError::Generic {
-                                        msg: format!(
-                                            "No value for key={} in metadata / enrichment map",
-                                            &key
-                                        ),
-                                    })?
-                                    .to_owned(),
-                            ))));
-                        }
+                            Some(em) => {
+                                transrichers.push(Box::new(AddItemStatic(DataCell::new(
+                                    cfg.target.target_type.clone(),
+                                    cfg.target
+                                        .header
+                                        .unwrap_or_else(|| cfg.target.idx.to_string()),
+                                    cfg.target.idx,
+                                    em.get(&key)
+                                        .ok_or_else(|| VenumTdsError::Generic {
+                                            msg: format!(
+                                                "No value for key={} in metadata / enrichment map",
+                                                &key
+                                            ),
+                                        })?
+                                        .to_owned(),
+                                ))));
+                            }
+                        },
                         AddItemType::Static { value } => {
                             // CAUTION: this only supports the standard conversion! (Meaning, non-standard date/time formats are not supported here)
                             transrichers.push(Box::new(AddItemStatic(DataCell::new(
@@ -230,7 +237,7 @@ mod tests {
     };
 
     #[test]
-    fn test_try_from_tepc_one_pass() {
+    fn try_from_transform_enrich_pass_config_for_transrich_pass() {
         let exp = TransrichPass {
             transformer: vec![
                 Box::new(DeleteItemAtIdx(0)),
@@ -329,6 +336,7 @@ mod tests {
                         idx: 2,
                         spec: SplitterType::Pattern {
                             pattern: String::from("(\\d+\\.\\d+) \\(([[:alpha:]].+)\\)"),
+                            split_none: None,
                         },
                         delete_after_split: true,
                         target_left: ItemTargetConfig {
@@ -346,7 +354,10 @@ mod tests {
                 TransformerConfig::SplitItem {
                     cfg: SplitItemConfig {
                         idx: 3,
-                        spec: SplitterType::SeparatorChar { char: ';' },
+                        spec: SplitterType::SeparatorChar {
+                            char: ';',
+                            split_none: None,
+                        },
                         delete_after_split: true,
                         target_left: ItemTargetConfig {
                             idx: 20,

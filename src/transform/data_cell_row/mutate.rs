@@ -100,7 +100,7 @@ impl TransrichDataCellRowInplaceStateful for AddItemRuntimeStatefulRowEnum {
             ValueType::UInt128,
             self.header.clone().unwrap_or_else(|| self.idx.to_string()),
             self.idx,
-            Value::UInt128(self.num_invoke.unwrap()), // we set it above!
+            Value::UInt128(self.num_invoke.unwrap()), // we set it right above!
         );
         data_cell_row.push(curr_enum_cell);
 
@@ -198,7 +198,7 @@ where
         data_cell_row.push(left);
         data_cell_row.push(right);
         if self.delete_source_item {
-            data_cell_row.del_by_idx(self.idx).unwrap();
+            data_cell_row.del_by_idx(self.idx).unwrap(); // we check it above already
         }
         Ok(())
     }
@@ -214,7 +214,7 @@ mod tests {
     };
 
     #[test]
-    fn test_mutate_idx_of_tds_data_cell() {
+    fn mutate_idx_of_tds_data_cell() {
         let m = MutateItemIdx::new(0, 1);
 
         let mut c = DataCellRow::new();
@@ -229,7 +229,7 @@ mod tests {
     }
 
     #[test]
-    fn test_delete_from_container() {
+    fn delete_from_container() {
         let mut c = DataCellRow::new();
         c.push(DataCell::new_without_data(
             ValueType::Bool,
@@ -253,14 +253,14 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "DataAccess(IllegalIdxAccess { idx: 0 })")]
-    fn test_delete_from_container_err() {
+    fn delete_from_container_err() {
         let mut c = DataCellRow::new();
         let container_transricher = DeleteItemAtIdx(0);
         container_transricher.transrich(&mut c).unwrap();
     }
 
     #[test]
-    fn test_add_item_static() {
+    fn add_item_static() {
         let mut c = DataCellRow::new();
         let container_transricher = AddItemStatic(DataCell::new_without_data(
             ValueType::Bool,
@@ -273,7 +273,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_item_runtime() {
+    fn add_item_runtime() {
         let mut c1 = DataCellRow::new();
         let container_transricher = AddItemRuntime {
             header: Some(String::from("col1")),
@@ -299,7 +299,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_item_runtime_singleton() {
+    fn add_item_runtime_singleton() {
         let mut c1 = DataCellRow::new();
         let container_transricher = AddItemRuntimeSingleton::new(
             Some(String::from("col1")),
@@ -326,7 +326,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_item_runtime_stateful_rownum() {
+    fn add_item_runtime_stateful_rownum() {
         let mut c1 = DataCellRow::new();
 
         let mut container_transricher =
@@ -345,7 +345,7 @@ mod tests {
     }
 
     #[test]
-    fn test_combined() {
+    fn combined() {
         let mut c = DataCellRow::new();
         c.push(DataCell::new_without_data(
             ValueType::Bool,
@@ -384,7 +384,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_split_container_item_using_value_string_separator_char_divider() {
+    pub fn split_container_item_using_value_string_separator_char_divider() {
         let mut c = DataCellRow::new();
         c.push(DataCell::new(
             ValueType::String,
@@ -416,7 +416,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_split_container_item_using_value_string_separator_char_divider_delete_src() {
+    pub fn split_container_item_using_value_string_separator_char_divider_delete_src() {
         let mut c = DataCellRow::new();
         c.push(DataCell::new(
             ValueType::String,
@@ -448,7 +448,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_split_container_item_using_value_string_separator_char_divider_none() {
+    pub fn split_container_item_using_value_string_separator_char_divider_none() {
         let mut c = DataCellRow::new();
         c.push(DataCell::new_without_data(
             ValueType::String,
@@ -479,7 +479,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_split_container_item_using_value_string_separator_char_divider_none_delete_src() {
+    pub fn split_container_item_using_value_string_separator_char_divider_none_delete_src() {
         let mut c = DataCellRow::new();
         c.push(DataCell::new_without_data(
             ValueType::String,
@@ -513,7 +513,7 @@ mod tests {
     #[should_panic(
         expected = "Split(SplitError { msg: \"Value is None, but split_none is false\", src_val: None, details: None })"
     )]
-    pub fn test_split_container_item_using_value_string_separator_char_divider_none_but_split_none_is_false(
+    pub fn split_container_item_using_value_string_separator_char_divider_none_but_split_none_is_false(
     ) {
         let mut c = DataCellRow::new();
         c.push(DataCell::new_without_data(

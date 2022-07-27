@@ -150,8 +150,8 @@ impl ValueSplit for ValueStringRegexPairSplit {
                         ))
                     })?;
                     if caps.len() == 3 {
-                        let token_match_1 = caps.get(1).unwrap().as_str();
-                        let token_match_2 = caps.get(2).unwrap().as_str();
+                        let token_match_1 = caps.get(1).unwrap().as_str(); // checked above, via .len()
+                        let token_match_2 = caps.get(2).unwrap().as_str(); // checked above, via .len()
                         Ok((
                             Value::String(String::from(token_match_1)),
                             Value::String(String::from(token_match_2)),
@@ -194,7 +194,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_split_seperator_char() {
+    fn split_by_seperator_char() {
         let sep = ValueStringSeparatorCharSplit {
             sep_char: ' ',
             split_none: true,
@@ -208,7 +208,7 @@ mod tests {
     }
 
     #[test]
-    fn test_split_seperator_char_none() {
+    fn split_by_seperator_char_none() {
         let sep = ValueStringSeparatorCharSplit {
             sep_char: ' ',
             split_none: true,
@@ -225,7 +225,7 @@ mod tests {
     #[should_panic(
         expected = "Split(SplitError { msg: \"expected 2 tokens as result of split, but got: 3\", src_val: String(\"foo bar baz\"), details: None }))"
     )]
-    fn test_split_seperator_char_err() {
+    fn split_by_seperator_char_err() {
         let sep = ValueStringSeparatorCharSplit {
             sep_char: ' ',
             split_none: true,
@@ -238,7 +238,7 @@ mod tests {
     #[should_panic(
         expected = "Split(SplitError { msg: \"expected 2 tokens as result of split, but got: 1\", src_val: String(\"foo\"), details: None })"
     )]
-    fn test_split_seperator_char_err2() {
+    fn split_by_seperator_char_err2() {
         let sep = ValueStringSeparatorCharSplit {
             sep_char: ' ',
             split_none: true,
@@ -248,7 +248,7 @@ mod tests {
     }
 
     #[test]
-    fn test_split_n_seperator_char() {
+    fn split_n_by_seperator_char() {
         let sep = ValueStringSeparatorCharSplitN {
             sep_char: ' ',
             split_none: false,
@@ -267,7 +267,7 @@ mod tests {
     }
 
     #[test]
-    fn test_split_n_seperator_char_none() {
+    fn split_n_by_seperator_char_none() {
         let sep = ValueStringSeparatorCharSplitN {
             sep_char: ' ',
             split_none: true,
@@ -286,7 +286,7 @@ mod tests {
     #[should_panic(
         expected = "Split(SplitError { msg: \"Value is Value::None, split_none is true, but split_none_into_num_clones is not set. Can't split into undefined number of targets!\", src_val: None, details: None })"
     )]
-    fn test_split_n_seperator_char_none_err_config() {
+    fn split_n_by_seperator_char_none_err_config() {
         let sep = ValueStringSeparatorCharSplitN {
             sep_char: ' ',
             split_none: true,
@@ -297,7 +297,7 @@ mod tests {
     }
 
     #[test]
-    fn test_split_regex_pair() {
+    fn split_by_regex_pair() {
         let sep_res =
             ValueStringRegexPairSplit::new("(\\d+\\.\\d+).*(\\d+\\.\\d+)".to_string(), true);
         assert!(sep_res.is_ok());
@@ -313,7 +313,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Split(SplitError { msg: \"No captures, but we need exactly two.\"")]
-    fn test_split_regex_err_no_captures() {
+    fn split_by_regex_err_no_captures() {
         let sep_res = ValueStringRegexPairSplit::new(
             "(\\d+\\.\\d+).*(\\d+\\.\\d+).*(\\d+\\.\\d+)".to_string(),
             true,
@@ -329,7 +329,7 @@ mod tests {
     #[should_panic(
         expected = "Split(SplitError { msg: \"1 capture group(s), but we need exactly two.\""
     )]
-    fn test_split_regex_err_too_few_capture_groups() {
+    fn split_by_regex_err_too_few_capture_groups() {
         let sep_res = ValueStringRegexPairSplit::new("(\\d+\\.\\d+)".to_string(), true);
         assert!(sep_res.is_ok());
         let sep = sep_res.unwrap();
@@ -340,7 +340,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Transform(Generic { msg: \"regex parse error")]
-    fn test_split_regex_pair_illegal_regex() {
+    fn split_by_regex_pair_illegal_regex() {
        ValueStringRegexPairSplit::new("FWPUJWDJW/)!(!()?))".to_string(), true).unwrap();        
     }
 }

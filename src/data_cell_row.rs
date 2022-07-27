@@ -74,7 +74,7 @@ mod tests {
     use crate::{data_cell::DataCell, data_cell_row::DataCellRow};
 
     #[test]
-    pub fn test_index_access() {
+    pub fn index_access() {
         let mut c = DataCellRow::new();
 
         let vc1 = DataCell::new(
@@ -90,7 +90,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_named_access() {
+    pub fn named_access() {
         let mut c = DataCellRow::new();
 
         let vc1 = DataCell::new(

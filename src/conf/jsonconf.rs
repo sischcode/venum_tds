@@ -6,8 +6,14 @@ use crate::transform::data_cell_row::mutate::{RuntimeValue, RuntimeValueStateful
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(tag = "name", rename_all = "camelCase")]
 pub enum SplitterType {
-    SeparatorChar { char: char },
-    Pattern { pattern: String },
+    SeparatorChar {
+        char: char,
+        split_none: Option<bool>, // We default to true!
+    },
+    Pattern {
+        pattern: String,
+        split_none: Option<bool>, // We default to true!
+    },
 }
 
 #[derive(Debug, Clone, Default, Deserialize, PartialEq)]
@@ -87,7 +93,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_transformer_config_delete_items() {
+    fn transformer_config_delete_items() {
         let data = r#"
         {
             "type": "deleteItems",
@@ -103,7 +109,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transformer_config_split_item_sep_char() {
+    fn transformer_config_split_item_sep_char() {
         let data = r#"
         {
             "type": "splitItem",
@@ -131,7 +137,10 @@ mod tests {
             TransformerConfig::SplitItem {
                 cfg: SplitItemConfig {
                     idx: 2,
-                    spec: SplitterType::SeparatorChar { char: ';' },
+                    spec: SplitterType::SeparatorChar {
+                        char: ';',
+                        split_none: None,
+                    },
                     delete_after_split: true,
                     target_left: ItemTargetConfig {
                         header: Some(String::from("some_float32_left")),
@@ -150,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transformer_config_split_item_regex_pattern() {
+    fn transformer_config_split_item_regex_pattern() {
         let data = r#"
         {
             "type": "splitItem",
@@ -180,6 +189,7 @@ mod tests {
                     idx: 2,
                     spec: SplitterType::Pattern {
                         pattern: String::from("(\\d+\\.\\d+) \\(([[:alpha:]].+)\\)"),
+                        split_none: None,
                     },
                     delete_after_split: true,
                     target_left: ItemTargetConfig {
@@ -199,7 +209,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transformer_config_add_item_static() {
+    fn transformer_config_add_item_static() {
         let data = r#"
         {
             "type": "addItem",
@@ -234,7 +244,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_order_items() {
+    pub fn order_items() {
         let data = r#"
         [
             { "from": 3, "to": 0 },
@@ -262,7 +272,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transform_enrich_pass_config() {
+    fn transform_enrich_pass_config() {
         let data = r#"
         {
             "comment": "pass1",
@@ -308,7 +318,10 @@ mod tests {
                     TransformerConfig::SplitItem {
                         cfg: SplitItemConfig {
                             idx: 2,
-                            spec: SplitterType::SeparatorChar { char: ';' },
+                            spec: SplitterType::SeparatorChar {
+                                char: ';',
+                                split_none: None,
+                            },
                             delete_after_split: true,
                             target_left: ItemTargetConfig {
                                 header: Some(String::from("some_float32_left")),
@@ -343,7 +356,7 @@ mod tests {
     }
 
     #[test]
-    fn test_config_root_config() {
+    fn config_root_config() {
         let data = r#"        
         [{
             "comment": "pass1",
@@ -410,7 +423,10 @@ mod tests {
                         TransformerConfig::SplitItem {
                             cfg: SplitItemConfig {
                                 idx: 2,
-                                spec: SplitterType::SeparatorChar { char: ';' },
+                                spec: SplitterType::SeparatorChar {
+                                    char: ';',
+                                    split_none: None,
+                                },
                                 delete_after_split: true,
                                 target_left: ItemTargetConfig {
                                     header: Some(String::from("some_float32_left")),
