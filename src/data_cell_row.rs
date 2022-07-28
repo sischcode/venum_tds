@@ -9,6 +9,9 @@ impl DataCellRow {
     pub fn new() -> Self {
         Self(Vec::new())
     }
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(Vec::with_capacity(capacity))
+    }
 }
 
 impl Default for DataCellRow {
