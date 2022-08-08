@@ -72,7 +72,8 @@ impl IntoIterator for DataCellRow {
 
 #[cfg(test)]
 mod tests {
-    use venum::venum::{Value, ValueType};
+    use venum::value::Value;
+    use venum::value_type::ValueType;
 
     use crate::{data_cell::DataCell, data_cell_row::DataCellRow};
 

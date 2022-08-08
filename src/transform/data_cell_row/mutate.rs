@@ -1,11 +1,12 @@
 use std::fmt::Debug;
 
-use venum::venum::{Value, ValueType};
+use venum::value::Value;
+use venum::value_type::ValueType;
 
 use crate::{
     data_cell::DataCell,
     data_cell_row::DataCellRow,
-    errors::{ContainerOpsErrors, Result, VenumTdsError},
+    errors::{ContainerOpsErrors, DataAccessErrors, Result, TransformErrors, VenumTdsError},
     transform::{
         data_cell::splitting::SplitDataCell,
         util::chrono_utils::utc_datetime_as_fixed_offset_datetime,
@@ -52,6 +53,34 @@ impl TransrichDataCellRowInplace for DeleteItemAtIdx {
         data_cell_row.del_by_idx(self.0).map(|_| ())
     }
 }
+
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct AddItemCopyConvertAs {
+//     pub src_idx: usize,
+//     pub target_header: Option<String>,
+//     pub target_idx: usize,
+//     pub target_data_type: ValueType,
+// }
+
+// impl TransrichDataCellRowInplace for AddItemCopyConvertAs {
+//     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
+//         let src = data_cell_row.get_by_idx(self.src_idx).ok_or_else(|| {
+//             VenumTdsError::DataAccess(DataAccessErrors::IllegalIdxAccess { idx: self.src_idx })
+//         })?;
+
+//         let converted_value = src.get_data().try_convert_to(&self.target_data_type)?;
+//         let new_datacell = DataCell::new(
+//             self.target_data_type.clone(),
+//             self.target_header
+//                 .clone()
+//                 .unwrap_or(self.target_idx.to_string()), // TODO
+//             self.target_idx,
+//             converted_value,
+//         );
+//         data_cell_row.push(new_datacell);
+//         Ok(())
+//     }
+// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AddItemStatic(pub DataCell);
@@ -152,7 +181,7 @@ impl AddItemRuntimeSingleton {
         match rtv {
             RuntimeValue::CurrentDateTimeUtcAsFixedOffset => {
                 Ok(AddItemRuntimeSingleton(DataCell::new(
-                    venum::venum::ValueType::DateTime,
+                    venum::value_type::ValueType::DateTime,
                     header.unwrap_or_else(|| idx.to_string()),
                     idx,
                     Value::DateTime(utc_datetime_as_fixed_offset_datetime(
@@ -206,7 +235,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use venum::venum::{Value, ValueType};
+    use venum::value::Value;
+    use venum::value_type::ValueType;
 
     use crate::transform::{
         data_cell::splitting::SplitDataCellUsingValueSplit, data_cell_row::mutate::*,

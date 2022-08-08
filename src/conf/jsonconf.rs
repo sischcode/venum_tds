@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use venum::venum::ValueType;
+use venum::value_type::ValueType;
 
 use crate::transform::data_cell_row::mutate::{RuntimeValue, RuntimeValueStateful};
 
@@ -91,6 +91,25 @@ pub struct ConfigRoot(pub Vec<TransformEnrichPassConfig>);
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // #[test]
+    // fn add_item_copy_convert_as() {
+    //     let data = r#"
+    //     {
+    //         "type": "addItem",
+    //         "cfg": {
+    //             "spec": { "name": "copyConvertAs", "fromIdx": 1, "comment": "transaction_date" },
+    //             "target": { "idx": 27, "header": "_transaction_date_start", "targetType": "DateTime" }
+    //         }
+    //     }
+    //     "#;
+    //     assert_eq!(
+    //         TransformerConfig::DeleteItems {
+    //             cfg: vec![0_usize, 1_usize]
+    //         },
+    //         serde_json::from_str(data).expect("could not deserialize ")
+    //     )
+    // }
 
     #[test]
     fn transformer_config_delete_items() {

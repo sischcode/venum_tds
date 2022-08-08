@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::jsonconf::ConfigRoot;
-use venum::venum::Value;
+use venum::value::Value;
 
 use crate::{
     conf::jsonconf::{AddItemType, SplitterType, TransformEnrichPassConfig, TransformerConfig},
@@ -221,7 +221,8 @@ impl TryFrom<ConfigRoot> for TransrichPassesConfig {
 mod tests {
     use std::collections::HashMap;
 
-    use venum::venum::{Value, ValueType};
+    use venum::value::Value;
+    use venum::value_type::ValueType;
 
     use crate::{
         conf::jsonconf::{

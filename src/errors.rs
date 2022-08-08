@@ -1,7 +1,7 @@
 use strum_macros::Display;
 use thiserror::Error;
 
-use venum::{errors::VenumError, venum::Value};
+use venum::{errors_result::VenumError, value::Value, value_type::ValueType};
 
 #[derive(Debug, PartialEq, Display, Clone)]
 pub enum WrappedErrors {
@@ -46,8 +46,19 @@ pub enum TransformErrors {
 
 #[derive(Debug, PartialEq, Display, Clone)]
 pub enum ContainerOpsErrors {
-    Generic { msg: String },
-    SplitItemError { idx: usize, msg: String },
+    Generic {
+        msg: String,
+    },
+    SplitItemError {
+        idx: usize,
+        msg: String,
+    },
+    ConvertAsError {
+        src_idx: usize,
+        src_data_type: ValueType,
+        target_data_type: ValueType,
+        details: Option<String>,
+    },
 }
 
 #[derive(Debug, PartialEq, Display, Clone)]

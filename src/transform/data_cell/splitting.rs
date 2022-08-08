@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
-use venum::venum::{Value, ValueType};
+use venum::value::Value;
+use venum::value_type::ValueType;
 
 use crate::data_cell::DataCell;
 use crate::errors::{Result, SplitError, TransformErrors, VenumTdsError};
@@ -63,7 +64,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use venum::venum::Value;
+    use venum::value::Value;
+    use venum::value_type::ValueType;
 
     use crate::transform::value::spliting::{
         ValueStringRegexPairSplit, ValueStringSeparatorCharSplit,

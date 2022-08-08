@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use regex::Regex;
-use venum::venum::Value;
+use venum::value::Value;
 
 use crate::errors::{Result, SplitError, TransformErrors, VenumTdsError};
 

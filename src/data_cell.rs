@@ -1,4 +1,5 @@
-use venum::venum::{Value, ValueType};
+use venum::value::Value;
+use venum::value_type::ValueType;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
 pub struct DataCell {
