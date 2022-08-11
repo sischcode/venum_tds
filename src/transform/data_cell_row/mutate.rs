@@ -6,7 +6,7 @@ use venum::value_type::ValueType;
 use crate::{
     data_cell::DataCell,
     data_cell_row::DataCellRow,
-    errors::{ContainerOpsErrors, Result, VenumTdsError},
+    errors::{ContainerOpsErrors, DataAccessErrors, Result, VenumTdsError},
     transform::{
         data_cell::splitting::SplitDataCell,
         util::chrono_utils::utc_datetime_as_fixed_offset_datetime,
@@ -54,33 +54,33 @@ impl TransrichDataCellRowInplace for DeleteItemAtIdx {
     }
 }
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct AddItemCopyConvertAs {
-//     pub src_idx: usize,
-//     pub target_header: Option<String>,
-//     pub target_idx: usize,
-//     pub target_data_type: ValueType,
-// }
+#[derive(Debug, Clone, PartialEq)]
+pub struct AddItemCopyConvertAs {
+    pub src_idx: usize,
+    pub target_header: Option<String>,
+    pub target_idx: usize,
+    pub target_data_type: ValueType,
+}
 
-// impl TransrichDataCellRowInplace for AddItemCopyConvertAs {
-//     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
-//         let src = data_cell_row.get_by_idx(self.src_idx).ok_or_else(|| {
-//             VenumTdsError::DataAccess(DataAccessErrors::IllegalIdxAccess { idx: self.src_idx })
-//         })?;
+impl TransrichDataCellRowInplace for AddItemCopyConvertAs {
+    fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
+        let src = data_cell_row.get_by_idx(self.src_idx).ok_or_else(|| {
+            VenumTdsError::DataAccess(DataAccessErrors::IllegalIdxAccess { idx: self.src_idx })
+        })?;
 
-//         let converted_value = src.get_data().try_convert_to(&self.target_data_type)?;
-//         let new_datacell = DataCell::new(
-//             self.target_data_type.clone(),
-//             self.target_header
-//                 .clone()
-//                 .unwrap_or(self.target_idx.to_string()), // TODO
-//             self.target_idx,
-//             converted_value,
-//         );
-//         data_cell_row.push(new_datacell);
-//         Ok(())
-//     }
-// }
+        let converted_value = src.get_data().try_convert_to(&self.target_data_type)?;
+        let new_datacell = DataCell::new(
+            self.target_data_type.clone(),
+            self.target_header
+                .clone()
+                .unwrap_or(self.target_idx.to_string()),
+            self.target_idx,
+            converted_value,
+        );
+        data_cell_row.push(new_datacell);
+        Ok(())
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AddItemStatic(pub DataCell);
@@ -372,6 +372,32 @@ mod tests {
         // println!("{:?}", &c2);
 
         assert_eq!(&Value::UInt128(2), c2.get_by_idx(0).unwrap().get_data());
+    }
+
+    #[test]
+    // TODO: more tests for this
+    fn add_item_copy_convert_as_bool_to_string() {
+        let mut c = DataCellRow::new();
+        c.push(DataCell::new(
+            ValueType::Bool,
+            String::from("col1-bool"),
+            0,
+            Value::Bool(true),
+        ));
+
+        let container_transricher = AddItemCopyConvertAs {
+            src_idx: 0,
+            target_data_type: ValueType::String,
+            target_header: Some(String::from("bool-2-string")),
+            target_idx: 1,
+        };
+
+        container_transricher.transrich(&mut c).unwrap();
+        assert_eq!(2, c.len());
+        assert_eq!(
+            &Value::String(String::from("true")),
+            c.get_by_idx(1).unwrap().get_data()
+        );
     }
 
     #[test]
