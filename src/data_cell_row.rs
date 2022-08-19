@@ -73,7 +73,6 @@ impl IntoIterator for DataCellRow {
 #[cfg(test)]
 mod tests {
     use venum::value::Value;
-    use venum::value_type::ValueType;
 
     use crate::{data_cell::DataCell, data_cell_row::DataCellRow};
 
@@ -81,12 +80,8 @@ mod tests {
     pub fn index_access() {
         let mut c = DataCellRow::new();
 
-        let vc1 = DataCell::new(
-            ValueType::String,
-            String::from("foo"),
-            123,
-            Value::String(String::from("meh")),
-        );
+        let vc1 =
+            DataCell::new(String::from("foo"), 123, Value::String(String::from("meh"))).unwrap();
         c.0.push(vc1);
 
         let res = c.get_by_idx(123).unwrap();
@@ -97,12 +92,8 @@ mod tests {
     pub fn named_access() {
         let mut c = DataCellRow::new();
 
-        let vc1 = DataCell::new(
-            ValueType::String,
-            String::from("foo"),
-            123,
-            Value::String(String::from("meh")),
-        );
+        let vc1 =
+            DataCell::new(String::from("foo"), 123, Value::String(String::from("meh"))).unwrap();
         c.0.push(vc1);
 
         let res = c.get_by_name("foo").unwrap();

@@ -23,11 +23,11 @@ use crate::{
 
 const SPLIT_NONE_DEFAULT: bool = true;
 
-impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, Value>>)> for TransrichPass {
+impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, String>>)> for TransrichPass {
     type Error = VenumTdsError;
 
     fn try_from(
-        tuple: (TransformEnrichPassConfig, &Option<HashMap<String, Value>>),
+        tuple: (TransformEnrichPassConfig, &Option<HashMap<String, String>>),
     ) -> Result<Self> {
         let (tepc, enrich_map) = tuple;
 
@@ -100,33 +100,43 @@ impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, Value>>)> for T
                                 return Err(VenumTdsError::Generic { msg: String::from("No metadata / enrichment map available, but at least needed for one transrichment") });
                             }
                             Some(em) => {
-                                transrichers.push(Box::new(AddItemStatic(DataCell::new(
+                                let str_val =
+                                    em.get(&key).ok_or_else(|| VenumTdsError::Generic {
+                                        msg: format!(
+                                            "No value for key={} in metadata / enrichment map",
+                                            &key
+                                        ),
+                                    })?;
+
+                                // for now, I assume we have control over what is in the enrichment map, and we don't need
+                                // to tunnel through chrono patterns and null-values-mappings and such.
+                                let val =
+                                    Value::from_str_and_type(str_val, &cfg.target.target_type)?;
+
+                                transrichers.push(Box::new(AddItemStatic(
+                                    DataCell::new_with_type_info(
+                                        cfg.target.target_type.clone(),
+                                        cfg.target
+                                            .header
+                                            .unwrap_or_else(|| cfg.target.idx.to_string()),
+                                        cfg.target.idx,
+                                        val,
+                                    )?,
+                                )));
+                            }
+                        },
+                        AddItemType::Static { value } => {
+                            // CAUTION: this only supports the standard conversion! (Meaning, non-standard date/time formats are not supported here)
+                            transrichers.push(Box::new(AddItemStatic(
+                                DataCell::new_with_type_info(
                                     cfg.target.target_type.clone(),
                                     cfg.target
                                         .header
                                         .unwrap_or_else(|| cfg.target.idx.to_string()),
                                     cfg.target.idx,
-                                    em.get(&key)
-                                        .ok_or_else(|| VenumTdsError::Generic {
-                                            msg: format!(
-                                                "No value for key={} in metadata / enrichment map",
-                                                &key
-                                            ),
-                                        })?
-                                        .to_owned(),
-                                ))));
-                            }
-                        },
-                        AddItemType::Static { value } => {
-                            // CAUTION: this only supports the standard conversion! (Meaning, non-standard date/time formats are not supported here)
-                            transrichers.push(Box::new(AddItemStatic(DataCell::new(
-                                cfg.target.target_type.clone(),
-                                cfg.target
-                                    .header
-                                    .unwrap_or_else(|| cfg.target.idx.to_string()),
-                                cfg.target.idx,
-                                Value::from_str_and_type(&value, &cfg.target.target_type)?,
-                            ))));
+                                    Value::from_str_and_type(&value, &cfg.target.target_type)?,
+                                )?,
+                            )));
                         }
                         AddItemType::Runtime {
                             rt_value,
@@ -190,10 +200,10 @@ impl TryFrom<TransformEnrichPassConfig> for TransrichPass {
     }
 }
 
-impl TryFrom<(ConfigRoot, &Option<HashMap<String, Value>>)> for TransrichPassesConfig {
+impl TryFrom<(ConfigRoot, &Option<HashMap<String, String>>)> for TransrichPassesConfig {
     type Error = VenumTdsError;
 
-    fn try_from(tuple: (ConfigRoot, &Option<HashMap<String, Value>>)) -> Result<Self> {
+    fn try_from(tuple: (ConfigRoot, &Option<HashMap<String, String>>)) -> Result<Self> {
         let (mut config, enrich_map) = tuple;
         if config.0.is_empty() {
             return Ok(TransrichPassesConfig { passes: Vec::new() });
@@ -284,18 +294,17 @@ mod tests {
                         ),
                     },
                 }),
-                Box::new(AddItemStatic(DataCell::new(
-                    ValueType::String,
-                    String::from("Region"),
-                    22,
-                    Value::String(String::from("Europe")),
-                ))),
-                Box::new(AddItemStatic(DataCell::new(
-                    ValueType::Float32,
-                    String::from("Magic Number"),
-                    23,
-                    Value::Float32(1.123),
-                ))),
+                Box::new(AddItemStatic(
+                    DataCell::new(
+                        String::from("Region"),
+                        22,
+                        Value::String(String::from("Europe")),
+                    )
+                    .unwrap(),
+                )),
+                Box::new(AddItemStatic(
+                    DataCell::new(String::from("Magic Number"), 23, Value::Float32(1.123)).unwrap(),
+                )),
                 // // We can't rely test this, because of the dynamic nature...
                 // Box::new(AddItemRuntime {
                 //     header: Some(String::from("Runtime DateTime 1")),
@@ -307,12 +316,9 @@ mod tests {
                 //     24,
                 //     RuntimeValue::CurrentDateTimeUtcAsFixedOffset,
                 // )),
-                Box::new(AddItemStatic(DataCell::new(
-                    ValueType::Int32,
-                    String::from("Account Id"),
-                    26,
-                    Value::Int32(1000),
-                ))),
+                Box::new(AddItemStatic(
+                    DataCell::new(String::from("Account Id"), 26, Value::Int32(1000)).unwrap(),
+                )),
             ],
             transformer_stateful: Vec::new(),
             order: Some(vec![
@@ -419,7 +425,7 @@ mod tests {
                 //         target: ItemTargetConfig {
                 //             idx: 25,
                 //             header: Some(String::from("Runtime DateTime 2")),
-                //             target_type: ValueType::DateTime, // strictly speaking, I thing we don't need the type info here
+                //             target_type: ValueType::DateTime,
                 //         },
                 //     },
                 // },
@@ -431,7 +437,7 @@ mod tests {
                         target: ItemTargetConfig {
                             idx: 26,
                             header: Some(String::from("Account Id")),
-                            target_type: ValueType::Int32, // TODO: strictly speaking, I thing we don't need the type info here
+                            target_type: ValueType::Int32,
                         },
                     },
                 },
@@ -449,8 +455,8 @@ mod tests {
             ]),
         };
 
-        let mut metadata: HashMap<String, Value> = HashMap::with_capacity(1);
-        metadata.insert(String::from("account_id"), Value::Int32(1000));
+        let mut metadata: HashMap<String, String> = HashMap::with_capacity(1);
+        metadata.insert(String::from("account_id"), String::from("1000"));
 
         let test_pass = TransrichPass::try_from((dsl_fmt, &Some(metadata))).unwrap();
 

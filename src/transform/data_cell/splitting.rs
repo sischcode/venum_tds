@@ -76,11 +76,11 @@ mod tests {
     #[test]
     fn split_data_cell_using_value_split_sep_char_split() {
         let data = DataCell::new(
-            ValueType::String,
             String::from("col1"),
             0,
             Value::String(String::from("foo 1")),
-        );
+        )
+        .unwrap();
 
         let split_using = SplitDataCellUsingValueSplit {
             splitter: ValueStringSeparatorCharSplit {
@@ -100,11 +100,11 @@ mod tests {
     #[test]
     fn split_data_cell_using_value_split_regex_split() {
         let data = DataCell::new(
-            ValueType::String,
             String::from("col1"),
             0,
             Value::String(String::from("1.12 2.23")),
-        );
+        )
+        .unwrap();
 
         let split_using = SplitDataCellUsingValueSplit {
             splitter: ValueStringRegexPairSplit::new(

@@ -92,12 +92,14 @@ mod tests {
         };
 
         let mut data = DataCellRow::new();
-        data.push(DataCell::new(
-            ValueType::String,
-            String::from("amount+currency"),
-            0,
-            Value::String(String::from("10.10 CHF")),
-        ));
+        data.push(
+            DataCell::new(
+                String::from("amount+currency"),
+                0,
+                Value::String(String::from("10.10 CHF")),
+            )
+            .unwrap(),
+        );
 
         trp.transrich(&mut data).unwrap();
 
@@ -143,12 +145,14 @@ mod tests {
         };
 
         let mut data = DataCellRow::new();
-        data.push(DataCell::new(
-            ValueType::String,
-            String::from("amount+currency"),
-            0,
-            Value::String(String::from("10.10 CHF")),
-        ));
+        data.push(
+            DataCell::new(
+                String::from("amount+currency"),
+                0,
+                Value::String(String::from("10.10 CHF")),
+            )
+            .unwrap(),
+        );
 
         trp.transrich(&mut data).unwrap();
 
@@ -205,12 +209,14 @@ mod tests {
         };
 
         let mut data = DataCellRow::new();
-        data.push(DataCell::new(
-            ValueType::String,
-            String::from("amount+currency"),
-            0,
-            Value::String(String::from("10.10 CHF")),
-        ));
+        data.push(
+            DataCell::new(
+                String::from("amount+currency"),
+                0,
+                Value::String(String::from("10.10 CHF")),
+            )
+            .unwrap(),
+        );
 
         // This is what we want to test!
         passes_config.transrich(&mut data).unwrap();

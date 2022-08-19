@@ -64,19 +64,19 @@ pub struct AddItemCopyConvertAs {
 
 impl TransrichDataCellRowInplace for AddItemCopyConvertAs {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
-        let src = data_cell_row.get_by_idx(self.src_idx).ok_or_else(|| {
+        let src = data_cell_row.get_by_idx(self.src_idx).ok_or({
             VenumTdsError::DataAccess(DataAccessErrors::IllegalIdxAccess { idx: self.src_idx })
         })?;
 
         let converted_value = src.get_data().try_convert_to(&self.target_data_type)?;
-        let new_datacell = DataCell::new(
+        let new_datacell = DataCell::new_with_type_info(
             self.target_data_type.clone(),
             self.target_header
                 .clone()
-                .unwrap_or(self.target_idx.to_string()),
+                .unwrap_or_else(|| self.target_idx.to_string()),
             self.target_idx,
             converted_value,
-        );
+        )?;
         data_cell_row.push(new_datacell);
         Ok(())
     }
@@ -126,11 +126,10 @@ impl TransrichDataCellRowInplaceStateful for AddItemRuntimeStatefulRowEnum {
             self.num_invoke = self.num_invoke.map(|old| old + 1);
         }
         let curr_enum_cell = DataCell::new(
-            ValueType::UInt128,
             self.header.clone().unwrap_or_else(|| self.idx.to_string()),
             self.idx,
             Value::UInt128(self.num_invoke.unwrap()), // we set it right above!
-        );
+        )?;
         data_cell_row.push(curr_enum_cell);
 
         Ok(())
@@ -140,8 +139,8 @@ impl AddItemRuntimeStatefulRowEnum {
     pub fn new(header: Option<String>, idx: usize) -> Self {
         Self {
             num_invoke: None,
-            header: header,
-            idx: idx,
+            header,
+            idx,
         }
     }
 }
@@ -157,13 +156,12 @@ impl TransrichDataCellRowInplace for AddItemRuntime {
         match self.rtv {
             RuntimeValue::CurrentDateTimeUtcAsFixedOffset => {
                 let curr_date_cell = DataCell::new(
-                    ValueType::DateTime,
                     self.header.clone().unwrap_or_else(|| self.idx.to_string()),
                     self.idx,
                     Value::DateTime(utc_datetime_as_fixed_offset_datetime(
                         chrono::offset::Utc::now(),
                     )),
-                );
+                )?;
                 data_cell_row.push(curr_date_cell);
                 Ok(())
             }
@@ -181,13 +179,12 @@ impl AddItemRuntimeSingleton {
         match rtv {
             RuntimeValue::CurrentDateTimeUtcAsFixedOffset => {
                 Ok(AddItemRuntimeSingleton(DataCell::new(
-                    venum::value_type::ValueType::DateTime,
                     header.unwrap_or_else(|| idx.to_string()),
                     idx,
                     Value::DateTime(utc_datetime_as_fixed_offset_datetime(
                         chrono::offset::Utc::now(),
                     )),
-                )))
+                )?))
             }
             // _ => Err(VenumTdsError::ContainerOps(ContainerOpsErrors::Generic {
             //     msg: format!("{:?} not implemented. (idx={}", &rtv, &idx),
@@ -378,12 +375,7 @@ mod tests {
     // TODO: more tests for this
     fn add_item_copy_convert_as_bool_to_string() {
         let mut c = DataCellRow::new();
-        c.push(DataCell::new(
-            ValueType::Bool,
-            String::from("col1-bool"),
-            0,
-            Value::Bool(true),
-        ));
+        c.push(DataCell::new(String::from("col1-bool"), 0, Value::Bool(true)).unwrap());
 
         let container_transricher = AddItemCopyConvertAs {
             src_idx: 0,
@@ -442,12 +434,14 @@ mod tests {
     #[test]
     pub fn split_container_item_using_value_string_separator_char_divider() {
         let mut c = DataCellRow::new();
-        c.push(DataCell::new(
-            ValueType::String,
-            String::from("col1"),
-            0,
-            Value::String(String::from("32.3:1")),
-        ));
+        c.push(
+            DataCell::new(
+                String::from("col1"),
+                0,
+                Value::String(String::from("32.3:1")),
+            )
+            .unwrap(),
+        );
 
         let data_cell_splitter = SplitDataCellUsingValueSplit {
             splitter: ValueStringSeparatorCharSplit {
@@ -474,12 +468,14 @@ mod tests {
     #[test]
     pub fn split_container_item_using_value_string_separator_char_divider_delete_src() {
         let mut c = DataCellRow::new();
-        c.push(DataCell::new(
-            ValueType::String,
-            String::from("col1"),
-            0,
-            Value::String(String::from("32.3:1")),
-        ));
+        c.push(
+            DataCell::new(
+                String::from("col1"),
+                0,
+                Value::String(String::from("32.3:1")),
+            )
+            .unwrap(),
+        );
 
         let data_cell_splitter = SplitDataCellUsingValueSplit {
             splitter: ValueStringSeparatorCharSplit {
