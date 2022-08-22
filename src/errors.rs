@@ -3,18 +3,18 @@ use thiserror::Error;
 
 use venum::{errors_result::VenumError, value::Value, value_type::ValueType};
 
-#[derive(Debug, PartialEq, Display, Clone)]
+#[derive(Debug, Display, PartialEq)]
 pub enum WrappedErrors {
     VenumError(VenumError),
 }
 
-#[derive(Debug, PartialEq, Display, Clone)]
+#[derive(Debug, PartialEq, Eq, Display)]
 pub enum DataAccessErrors {
     IllegalIdxAccess { idx: usize },
     IllegalNameAccess { name: String },
 }
 
-#[derive(Error, Debug, PartialEq, Clone)]
+#[derive(Error, Debug, PartialEq)]
 #[error("error: {msg:?}; problem value: {src_val:?}. Details: {details:?}")]
 pub struct SplitError {
     msg: String,
@@ -38,13 +38,13 @@ impl SplitError {
     }
 }
 
-#[derive(Debug, PartialEq, Display, Clone)]
+#[derive(Debug, PartialEq, Display)]
 pub enum TransformErrors {
     Generic { msg: String },
     Split(SplitError),
 }
 
-#[derive(Debug, PartialEq, Display, Clone)]
+#[derive(Debug, Display, PartialEq, Eq)]
 pub enum ContainerOpsErrors {
     Generic {
         msg: String,
@@ -61,7 +61,7 @@ pub enum ContainerOpsErrors {
     },
 }
 
-#[derive(Debug, PartialEq, Display, Clone)]
+#[derive(Debug, PartialEq, Display)]
 pub enum VenumTdsError {
     Generic { msg: String },
     Wrapped(WrappedErrors),

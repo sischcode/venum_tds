@@ -30,7 +30,7 @@ fn converse_to(val: &Value, type_info: &ValueType) -> Result<Value> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct SplitDataCellUsingValueSplit<S: ValueSplit> {
     pub splitter: S,
     pub target_left: DataCell,
