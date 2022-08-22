@@ -23,11 +23,11 @@ use crate::{
 
 const SPLIT_NONE_DEFAULT: bool = true;
 
-impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, String>>)> for TransrichPass {
+impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, String>>)> for TransrichPass {
     type Error = VenumTdsError;
 
     fn try_from(
-        tuple: (TransformEnrichPassConfig, &Option<HashMap<String, String>>),
+        tuple: (TransformEnrichPassConfig, Option<&HashMap<String, String>>),
     ) -> Result<Self> {
         let (tepc, enrich_map) = tuple;
 
@@ -196,14 +196,14 @@ impl TryFrom<(TransformEnrichPassConfig, &Option<HashMap<String, String>>)> for 
 impl TryFrom<TransformEnrichPassConfig> for TransrichPass {
     type Error = VenumTdsError;
     fn try_from(tepc: TransformEnrichPassConfig) -> Result<Self> {
-        TransrichPass::try_from((tepc, &None))
+        TransrichPass::try_from((tepc, None))
     }
 }
 
-impl TryFrom<(ConfigRoot, &Option<HashMap<String, String>>)> for TransrichPassesConfig {
+impl TryFrom<(ConfigRoot, Option<&HashMap<String, String>>)> for TransrichPassesConfig {
     type Error = VenumTdsError;
 
-    fn try_from(tuple: (ConfigRoot, &Option<HashMap<String, String>>)) -> Result<Self> {
+    fn try_from(tuple: (ConfigRoot, Option<&HashMap<String, String>>)) -> Result<Self> {
         let (mut config, enrich_map) = tuple;
         if config.0.is_empty() {
             return Ok(TransrichPassesConfig { passes: Vec::new() });
@@ -223,7 +223,7 @@ impl TryFrom<(ConfigRoot, &Option<HashMap<String, String>>)> for TransrichPasses
 impl TryFrom<ConfigRoot> for TransrichPassesConfig {
     type Error = VenumTdsError;
     fn try_from(config: ConfigRoot) -> Result<Self> {
-        TransrichPassesConfig::try_from((config, &None))
+        TransrichPassesConfig::try_from((config, None))
     }
 }
 
@@ -458,7 +458,7 @@ mod tests {
         let mut metadata: HashMap<String, String> = HashMap::with_capacity(1);
         metadata.insert(String::from("account_id"), String::from("1000"));
 
-        let test_pass = TransrichPass::try_from((dsl_fmt, &Some(metadata))).unwrap();
+        let test_pass = TransrichPass::try_from((dsl_fmt, Some(&metadata))).unwrap();
 
         assert_eq!(format!("{:?}", exp), format!("{:?}", test_pass));
     }
