@@ -3,7 +3,7 @@ use venum::value_type::ValueType;
 
 use crate::transform::data_cell_row::mutate::{RuntimeValue, RuntimeValueStateful};
 
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(tag = "name", rename_all = "camelCase")]
 pub enum SplitterType {
     SeparatorChar {
@@ -16,7 +16,7 @@ pub enum SplitterType {
     },
 }
 
-#[derive(Debug, Clone, Default, Deserialize, PartialEq)]
+#[derive(Debug, Default, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemTargetConfig {
     pub idx: usize,
@@ -24,7 +24,7 @@ pub struct ItemTargetConfig {
     pub target_type: ValueType,
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct SplitItemConfig {
     pub idx: usize,
@@ -35,7 +35,7 @@ pub struct SplitItemConfig {
     // TODO: configurable split_none option
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(tag = "name", rename_all = "camelCase")]
 pub enum AddItemType {
     Meta {
@@ -55,14 +55,14 @@ pub enum AddItemType {
     },
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct AddItemConfig {
     pub spec: AddItemType,
     pub target: ItemTargetConfig,
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum TransformerConfig {
     DeleteItems { cfg: Vec<usize> },
@@ -70,13 +70,13 @@ pub enum TransformerConfig {
     AddItem { cfg: AddItemConfig },
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 pub struct OrderItemsEntry {
     pub from: usize,
     pub to: usize,
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransformEnrichPassConfig {
     pub comment: Option<String>,
@@ -84,7 +84,7 @@ pub struct TransformEnrichPassConfig {
     pub order_items: Option<Vec<OrderItemsEntry>>,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigRoot(pub Vec<TransformEnrichPassConfig>);
 

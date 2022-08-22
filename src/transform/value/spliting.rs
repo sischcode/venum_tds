@@ -13,7 +13,7 @@ pub trait ValueSplitN: Debug {
     fn split_n(&self, src: &Value) -> Result<Vec<Value>>;
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct ValueStringSeparatorCharSplit {
     pub sep_char: char,
     pub split_none: bool,
@@ -61,7 +61,7 @@ impl ValueSplit for ValueStringSeparatorCharSplit {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct ValueStringSeparatorCharSplitN {
     pub sep_char: char,
     pub split_none: bool,
@@ -118,7 +118,7 @@ impl ValueSplitN for ValueStringSeparatorCharSplitN {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ValueStringRegexPairSplit {
     pub re: Regex,
     pub split_none: bool,

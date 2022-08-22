@@ -21,7 +21,7 @@ pub trait TransrichDataCellRowInplaceStateful: Debug {
     fn transrich(&mut self, data_cell_row: &mut DataCellRow) -> Result<()>;
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct MutateItemIdx {
     pub from: usize,
     pub to: usize,
@@ -46,7 +46,7 @@ impl TransrichDataCellRowInplace for MutateItemIdx {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct DeleteItemAtIdx(pub usize);
 impl TransrichDataCellRowInplace for DeleteItemAtIdx {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
@@ -54,7 +54,7 @@ impl TransrichDataCellRowInplace for DeleteItemAtIdx {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct AddItemCopyConvertAs {
     pub src_idx: usize,
     pub target_header: Option<String>,
@@ -82,7 +82,7 @@ impl TransrichDataCellRowInplace for AddItemCopyConvertAs {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct AddItemStatic(pub DataCell);
 impl TransrichDataCellRowInplace for AddItemStatic {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
@@ -91,7 +91,7 @@ impl TransrichDataCellRowInplace for AddItemStatic {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct AddItemMetadata(pub DataCell);
 impl TransrichDataCellRowInplace for AddItemMetadata {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
@@ -100,19 +100,19 @@ impl TransrichDataCellRowInplace for AddItemMetadata {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "jsonconf", derive(serde::Deserialize))]
 pub enum RuntimeValue {
     CurrentDateTimeUtcAsFixedOffset,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "jsonconf", derive(serde::Deserialize))]
 pub enum RuntimeValueStateful {
     RowEnumeration,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct AddItemRuntimeStatefulRowEnum {
     num_invoke: Option<u128>,
     pub header: Option<String>,
@@ -145,7 +145,7 @@ impl AddItemRuntimeStatefulRowEnum {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct AddItemRuntime {
     pub header: Option<String>,
     pub idx: usize,
@@ -172,7 +172,7 @@ impl TransrichDataCellRowInplace for AddItemRuntime {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct AddItemRuntimeSingleton(DataCell);
 impl AddItemRuntimeSingleton {
     pub fn new(header: Option<String>, idx: usize, rtv: RuntimeValue) -> Result<Self> {
@@ -200,7 +200,7 @@ impl TransrichDataCellRowInplace for AddItemRuntimeSingleton {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct SplitItemAtIdx<S: SplitDataCell> {
     pub idx: usize,
     pub splitter: S,
