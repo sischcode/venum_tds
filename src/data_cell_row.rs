@@ -70,6 +70,24 @@ impl IntoIterator for DataCellRow {
     }
 }
 
+impl<'a> IntoIterator for &'a DataCellRow {
+    type Item = &'a DataCell;
+    type IntoIter = std::slice::Iter<'a, DataCell>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut DataCellRow {
+    type Item = &'a mut DataCell;
+    type IntoIter = std::slice::IterMut<'a, DataCell>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter_mut()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use venum::value::Value;
