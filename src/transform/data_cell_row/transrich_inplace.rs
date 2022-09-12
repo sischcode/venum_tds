@@ -13,12 +13,9 @@ use crate::{
     },
 };
 
-pub trait TransrichDataCellRowInplace: Debug {
+/// The "simplest" transrichment. We get all info we need from the (static) transrichment config.
+pub trait TransrichInplace: Debug {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()>;
-}
-
-pub trait TransrichDataCellRowInplaceStateful: Debug {
-    fn transrich(&mut self, data_cell_row: &mut DataCellRow) -> Result<()>;
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -31,7 +28,7 @@ impl MutateItemIdx {
         Self { from, to }
     }
 }
-impl TransrichDataCellRowInplace for MutateItemIdx {
+impl TransrichInplace for MutateItemIdx {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
         let container_entry = data_cell_row.get_by_idx_mut(self.from);
         match container_entry {
@@ -48,7 +45,7 @@ impl TransrichDataCellRowInplace for MutateItemIdx {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DeleteItemAtIdx(pub usize);
-impl TransrichDataCellRowInplace for DeleteItemAtIdx {
+impl TransrichInplace for DeleteItemAtIdx {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
         data_cell_row.del_by_idx(self.0).map(|_| ())
     }
@@ -61,8 +58,7 @@ pub struct AddItemCopyConvertAs {
     pub target_idx: usize,
     pub target_data_type: ValueType,
 }
-
-impl TransrichDataCellRowInplace for AddItemCopyConvertAs {
+impl TransrichInplace for AddItemCopyConvertAs {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
         let src = data_cell_row.get_by_idx(self.src_idx).ok_or({
             VenumTdsError::DataAccess(DataAccessErrors::IllegalIdxAccess { idx: self.src_idx })
@@ -84,65 +80,17 @@ impl TransrichDataCellRowInplace for AddItemCopyConvertAs {
 
 #[derive(Debug, PartialEq)]
 pub struct AddItemStatic(pub DataCell);
-impl TransrichDataCellRowInplace for AddItemStatic {
+impl TransrichInplace for AddItemStatic {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
         data_cell_row.push(self.0.clone());
         Ok(())
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct AddItemMetadata(pub DataCell);
-impl TransrichDataCellRowInplace for AddItemMetadata {
-    fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
-        data_cell_row.push(self.0.clone());
-        Ok(())
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "jsonconf", derive(serde::Deserialize))]
 pub enum RuntimeValue {
     CurrentDateTimeUtcAsFixedOffset,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "jsonconf", derive(serde::Deserialize))]
-pub enum RuntimeValueStateful {
-    RowEnumeration,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct AddItemRuntimeStatefulRowEnum {
-    num_invoke: Option<u128>,
-    pub header: Option<String>,
-    pub idx: usize,
-}
-impl TransrichDataCellRowInplaceStateful for AddItemRuntimeStatefulRowEnum {
-    fn transrich(&mut self, data_cell_row: &mut DataCellRow) -> Result<()> {
-        if self.num_invoke.is_none() {
-            self.num_invoke = Some(1);
-        } else {
-            self.num_invoke = self.num_invoke.map(|old| old + 1);
-        }
-        let curr_enum_cell = DataCell::new(
-            self.header.clone().unwrap_or_else(|| self.idx.to_string()),
-            self.idx,
-            Value::UInt128(self.num_invoke.unwrap()), // we set it right above!
-        )?;
-        data_cell_row.push(curr_enum_cell);
-
-        Ok(())
-    }
-}
-impl AddItemRuntimeStatefulRowEnum {
-    pub fn new(header: Option<String>, idx: usize) -> Self {
-        Self {
-            num_invoke: None,
-            header,
-            idx,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -151,7 +99,7 @@ pub struct AddItemRuntime {
     pub idx: usize,
     pub rtv: RuntimeValue,
 }
-impl TransrichDataCellRowInplace for AddItemRuntime {
+impl TransrichInplace for AddItemRuntime {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
         match self.rtv {
             RuntimeValue::CurrentDateTimeUtcAsFixedOffset => {
@@ -192,8 +140,7 @@ impl AddItemRuntimeSingleton {
         }
     }
 }
-
-impl TransrichDataCellRowInplace for AddItemRuntimeSingleton {
+impl TransrichInplace for AddItemRuntimeSingleton {
     fn transrich(&self, data_cell_row: &mut DataCellRow) -> Result<()> {
         data_cell_row.push(self.0.clone());
         Ok(())
@@ -207,7 +154,7 @@ pub struct SplitItemAtIdx<S: SplitDataCell> {
     pub delete_source_item: bool,
 }
 
-impl<S> TransrichDataCellRowInplace for SplitItemAtIdx<S>
+impl<S> TransrichInplace for SplitItemAtIdx<S>
 where
     S: SplitDataCell,
 {
@@ -235,9 +182,15 @@ mod tests {
     use venum::value::Value;
     use venum::value_type::ValueType;
 
-    use crate::transform::{
-        data_cell::splitting::SplitDataCellUsingValueSplit, data_cell_row::mutate::*,
-        value::spliting::ValueStringSeparatorCharSplit,
+    use crate::{
+        data_cell::DataCell,
+        data_cell_row::DataCellRow,
+        errors::Result,
+        transform::{
+            data_cell::splitting::SplitDataCellUsingValueSplit,
+            data_cell_row::{transrich_inplace::*, transrich_inplace_stateful::*},
+            value::spliting::ValueStringSeparatorCharSplit,
+        },
     };
 
     #[test]
@@ -406,7 +359,7 @@ mod tests {
             1,
         ));
 
-        let mut transrichers: Vec<Box<dyn TransrichDataCellRowInplace>> = Vec::with_capacity(4);
+        let mut transrichers: Vec<Box<dyn TransrichInplace>> = Vec::with_capacity(4);
 
         transrichers.push(Box::new(AddItemStatic(DataCell::new_without_data(
             ValueType::Bool,

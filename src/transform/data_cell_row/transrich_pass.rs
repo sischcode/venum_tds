@@ -2,39 +2,53 @@ use std::fmt::Debug;
 
 use crate::{data_cell_row::DataCellRow, errors::Result};
 
-use super::mutate::{TransrichDataCellRowInplace, TransrichDataCellRowInplaceStateful};
+use super::{
+    transrich_inplace::TransrichInplace, transrich_inplace_stateful::TransrichInplaceStateful,
+};
 
 #[derive(Debug)]
 pub struct TransrichPass {
-    pub transformer: Vec<Box<dyn TransrichDataCellRowInplace>>,
-    pub transformer_stateful: Vec<Box<dyn TransrichDataCellRowInplaceStateful>>,
-    pub order: Option<Vec<Box<dyn TransrichDataCellRowInplace>>>,
+    stateless_transrichers: Vec<Box<dyn TransrichInplace>>,
+    stateful_transrichers: Vec<Box<dyn TransrichInplaceStateful>>,
+    ordering_transrichers: Option<Vec<Box<dyn TransrichInplace>>>,
+}
+
+impl TransrichPass {
+    pub fn new(
+        transformer: Vec<Box<dyn TransrichInplace>>,
+        transformer_stateful: Vec<Box<dyn TransrichInplaceStateful>>,
+        order: Option<Vec<Box<dyn TransrichInplace>>>,
+    ) -> Self {
+        Self {
+            stateless_transrichers: transformer,
+            stateful_transrichers: transformer_stateful,
+            ordering_transrichers: order,
+        }
+    }
 }
 
 impl TransrichPass {
     pub fn transrich(&mut self, container: &mut DataCellRow) -> Result<()> {
-        self.transformer
+        self.stateless_transrichers
             .iter()
             .try_for_each(|tri| tri.transrich(container))?;
 
-        self.transformer_stateful
+        self.stateful_transrichers
             .iter_mut()
             .try_for_each(|tri| tri.transrich(container))?;
 
-        if let Some(orderings) = &self.order {
+        if let Some(orderings) = &self.ordering_transrichers {
             orderings.iter().try_for_each(|o| o.transrich(container))?;
         }
         Ok(())
     }
 }
 
-pub struct TransrichPassesConfig {
-    pub passes: Vec<TransrichPass>,
-}
+pub struct TransrichPasses(pub Vec<TransrichPass>);
 
-impl TransrichPassesConfig {
+impl TransrichPasses {
     pub fn transrich(&mut self, container: &mut DataCellRow) -> Result<()> {
-        self.passes
+        self.0
             .iter_mut()
             .try_for_each(|pass| pass.transrich(container))
     }
@@ -54,8 +68,9 @@ mod tests {
         transform::{
             data_cell::splitting::SplitDataCellUsingValueSplit,
             data_cell_row::{
-                mutate::*,
-                transrich_pass::{TransrichPass, TransrichPassesConfig},
+                transrich_inplace::*,
+                transrich_inplace_stateful::*,
+                transrich_pass::{TransrichPass, TransrichPasses},
             },
             value::spliting::ValueStringSeparatorCharSplit,
         },
@@ -64,7 +79,7 @@ mod tests {
     #[test]
     fn transrich_pass_del_after_split() {
         let mut trp: TransrichPass = TransrichPass {
-            transformer: vec![Box::new(SplitItemAtIdx {
+            stateless_transrichers: vec![Box::new(SplitItemAtIdx {
                 delete_source_item: true,
                 idx: 0,
                 splitter: SplitDataCellUsingValueSplit {
@@ -84,8 +99,8 @@ mod tests {
                     ),
                 },
             })],
-            transformer_stateful: Vec::new(),
-            order: Some(vec![
+            stateful_transrichers: Vec::new(),
+            ordering_transrichers: Some(vec![
                 Box::new(MutateItemIdx { from: 1, to: 0 }), // CAUTION!!!
                 Box::new(MutateItemIdx { from: 2, to: 1 }), // You need to order from low to high!
             ]),
@@ -114,7 +129,7 @@ mod tests {
     #[test]
     fn transrich_pass_remain_after_split_then_delete() {
         let mut trp: TransrichPass = TransrichPass {
-            transformer: vec![
+            stateless_transrichers: vec![
                 Box::new(SplitItemAtIdx {
                     delete_source_item: false,
                     idx: 0,
@@ -137,8 +152,8 @@ mod tests {
                 }),
                 Box::new(DeleteItemAtIdx { 0: 0 }),
             ],
-            transformer_stateful: Vec::new(),
-            order: Some(vec![
+            stateful_transrichers: Vec::new(),
+            ordering_transrichers: Some(vec![
                 Box::new(MutateItemIdx { from: 1, to: 0 }), // CAUTION!!!
                 Box::new(MutateItemIdx { from: 2, to: 1 }), // You need to order from low to high!
             ]),
@@ -167,7 +182,7 @@ mod tests {
     #[test]
     fn transrich_passes() {
         let trp1: TransrichPass = TransrichPass {
-            transformer: vec![Box::new(SplitItemAtIdx {
+            stateless_transrichers: vec![Box::new(SplitItemAtIdx {
                 delete_source_item: false, // <--- !!!
                 idx: 0,
                 splitter: SplitDataCellUsingValueSplit {
@@ -187,8 +202,8 @@ mod tests {
                     ),
                 },
             })],
-            transformer_stateful: Vec::new(),
-            order: Some(vec![
+            stateful_transrichers: Vec::new(),
+            ordering_transrichers: Some(vec![
                 Box::new(MutateItemIdx { from: 0, to: 3 }), // move the old "column" out of the way
                 Box::new(MutateItemIdx { from: 1, to: 0 }),
                 Box::new(MutateItemIdx { from: 2, to: 1 }),
@@ -196,17 +211,15 @@ mod tests {
         };
 
         let trp2: TransrichPass = TransrichPass {
-            transformer: vec![Box::new(DeleteItemAtIdx { 0: 3 })], // we delete idx 3 here
-            transformer_stateful: vec![Box::new(AddItemRuntimeStatefulRowEnum::new(
+            stateless_transrichers: vec![Box::new(DeleteItemAtIdx { 0: 3 })], // we delete idx 3 here
+            stateful_transrichers: vec![Box::new(AddItemRuntimeStatefulRowEnum::new(
                 Some(String::from("_ds_entity_row_num")),
                 2, // Stateful is running AFTER stateless, so we can recycle the index!
             ))],
-            order: None,
+            ordering_transrichers: None,
         };
 
-        let mut passes_config = TransrichPassesConfig {
-            passes: vec![trp1, trp2],
-        };
+        let mut passes_config = TransrichPasses(vec![trp1, trp2]);
 
         let mut data = DataCellRow::new();
         data.push(

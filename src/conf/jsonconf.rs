@@ -1,7 +1,9 @@
 use serde::Deserialize;
 use venum::value_type::ValueType;
 
-use crate::transform::data_cell_row::mutate::{RuntimeValue, RuntimeValueStateful};
+use crate::transform::data_cell_row::{
+    transrich_inplace::RuntimeValue, transrich_inplace_stateful::RuntimeValueStateful,
+};
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(tag = "name", rename_all = "camelCase")]

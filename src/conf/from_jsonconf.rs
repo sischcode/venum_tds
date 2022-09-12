@@ -10,12 +10,9 @@ use crate::{
     transform::{
         data_cell::splitting::SplitDataCellUsingValueSplit,
         data_cell_row::{
-            mutate::{
-                AddItemRuntime, AddItemRuntimeSingleton, AddItemRuntimeStatefulRowEnum,
-                AddItemStatic, DeleteItemAtIdx, MutateItemIdx, RuntimeValueStateful,
-                SplitItemAtIdx, TransrichDataCellRowInplace, TransrichDataCellRowInplaceStateful,
-            },
-            transrich_pass::{TransrichPass, TransrichPassesConfig},
+            transrich_inplace::*,
+            transrich_inplace_stateful::*,
+            transrich_pass::{TransrichPass, TransrichPasses},
         },
         value::spliting::{ValueStringRegexPairSplit, ValueStringSeparatorCharSplit},
     },
@@ -23,50 +20,56 @@ use crate::{
 
 const SPLIT_NONE_DEFAULT: bool = true;
 
-impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, String>>)> for TransrichPass {
+// Beware, there is a whole lotta cloning going on here!
+
+impl TryFrom<(&TransformEnrichPassConfig, Option<&HashMap<String, String>>)> for TransrichPass {
     type Error = VenumTdsError;
 
     fn try_from(
-        tuple: (TransformEnrichPassConfig, Option<&HashMap<String, String>>),
+        tuple: (&TransformEnrichPassConfig, Option<&HashMap<String, String>>),
     ) -> Result<Self> {
         let (tepc, enrich_map) = tuple;
 
-        let mut transrichers: Vec<Box<dyn TransrichDataCellRowInplace>> =
+        let mut transrichers: Vec<Box<dyn TransrichInplace>> =
             Vec::with_capacity(tepc.transformers.len());
-        let mut transrichers_stateful: Vec<Box<dyn TransrichDataCellRowInplaceStateful>> =
-            Vec::new();
+        let mut transrichers_stateful: Vec<Box<dyn TransrichInplaceStateful>> = Vec::new();
 
-        for tc in tepc.transformers {
+        for tc in &tepc.transformers {
             match tc {
                 TransformerConfig::DeleteItems { cfg } => {
                     for i in cfg {
-                        transrichers.push(Box::new(DeleteItemAtIdx(i)));
+                        transrichers.push(Box::new(DeleteItemAtIdx(*i)));
                     }
                 }
                 TransformerConfig::SplitItem { cfg } => {
                     let target_left = DataCell::new_without_data(
-                        cfg.target_left.target_type,
+                        cfg.target_left.target_type.clone(),
                         cfg.target_left
                             .header
+                            .clone()
                             .unwrap_or_else(|| cfg.target_left.idx.to_string()),
                         cfg.target_left.idx,
                     );
                     let target_right = DataCell::new_without_data(
-                        cfg.target_right.target_type,
+                        cfg.target_right.target_type.clone(),
                         cfg.target_right
                             .header
+                            .clone()
                             .unwrap_or_else(|| cfg.target_right.idx.to_string()),
                         cfg.target_right.idx,
                     );
 
-                    match cfg.spec {
-                        SplitterType::SeparatorChar { char, split_none } => {
+                    match &cfg.spec {
+                        SplitterType::SeparatorChar {
+                            char: ch,
+                            split_none,
+                        } => {
                             transrichers.push(Box::new(SplitItemAtIdx {
                                 delete_source_item: cfg.delete_after_split,
                                 idx: cfg.idx,
                                 splitter: SplitDataCellUsingValueSplit {
                                     splitter: ValueStringSeparatorCharSplit {
-                                        sep_char: char,
+                                        sep_char: *ch,
                                         split_none: split_none.unwrap_or(SPLIT_NONE_DEFAULT),
                                     },
                                     target_left,
@@ -94,17 +97,17 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, String>>)> for 
                     }
                 }
                 TransformerConfig::AddItem { cfg } => {
-                    match cfg.spec {
+                    match &cfg.spec {
                         AddItemType::Meta { key } => match enrich_map {
                             None => {
                                 return Err(VenumTdsError::Generic { msg: String::from("No metadata / enrichment map available, but at least needed for one transrichment") });
                             }
                             Some(em) => {
                                 let str_val =
-                                    em.get(&key).ok_or_else(|| VenumTdsError::Generic {
+                                    em.get(key).ok_or_else(|| VenumTdsError::Generic {
                                         msg: format!(
                                             "No value for key={} in metadata / enrichment map",
-                                            &key
+                                            key
                                         ),
                                     })?;
 
@@ -118,6 +121,7 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, String>>)> for 
                                         cfg.target.target_type.clone(),
                                         cfg.target
                                             .header
+                                            .clone()
                                             .unwrap_or_else(|| cfg.target.idx.to_string()),
                                         cfg.target.idx,
                                         val,
@@ -132,6 +136,7 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, String>>)> for 
                                     cfg.target.target_type.clone(),
                                     cfg.target
                                         .header
+                                        .clone()
                                         .unwrap_or_else(|| cfg.target.idx.to_string()),
                                     cfg.target.idx,
                                     Value::from_str_and_type(&value, &cfg.target.target_type)?,
@@ -144,15 +149,15 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, String>>)> for 
                         } => {
                             if as_singleton.unwrap_or(false) {
                                 transrichers.push(Box::new(AddItemRuntimeSingleton::new(
-                                    cfg.target.header,
+                                    cfg.target.header.clone(),
                                     cfg.target.idx,
-                                    rt_value,
+                                    rt_value.clone(),
                                 )?));
                             } else {
                                 transrichers.push(Box::new(AddItemRuntime {
-                                    header: cfg.target.header,
+                                    header: cfg.target.header.clone(),
                                     idx: cfg.target.idx,
-                                    rtv: rt_value,
+                                    rtv: rt_value.clone(),
                                 }));
                             }
                         }
@@ -160,7 +165,7 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, String>>)> for 
                             RuntimeValueStateful::RowEnumeration => {
                                 transrichers_stateful.push(Box::new(
                                     AddItemRuntimeStatefulRowEnum::new(
-                                        cfg.target.header,
+                                        cfg.target.header.clone(),
                                         cfg.target.idx,
                                     ),
                                 ));
@@ -171,9 +176,9 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, String>>)> for 
             };
         }
 
-        let mut ordering_opt: Option<Vec<Box<dyn TransrichDataCellRowInplace>>> = None;
-        if let Some(order_items) = tepc.order_items {
-            let mut ordering: Vec<Box<dyn TransrichDataCellRowInplace>> =
+        let mut ordering_opt: Option<Vec<Box<dyn TransrichInplace>>> = None;
+        if let Some(order_items) = &tepc.order_items {
+            let mut ordering: Vec<Box<dyn TransrichInplace>> =
                 Vec::with_capacity(order_items.len());
 
             for o in order_items {
@@ -185,45 +190,43 @@ impl TryFrom<(TransformEnrichPassConfig, Option<&HashMap<String, String>>)> for 
             ordering_opt = Some(ordering);
         }
 
-        Ok(TransrichPass {
-            transformer: transrichers,
-            transformer_stateful: transrichers_stateful,
-            order: ordering_opt,
-        })
+        Ok(TransrichPass::new(
+            transrichers,
+            transrichers_stateful,
+            ordering_opt,
+        ))
     }
 }
 
-impl TryFrom<TransformEnrichPassConfig> for TransrichPass {
+impl TryFrom<&TransformEnrichPassConfig> for TransrichPass {
     type Error = VenumTdsError;
-    fn try_from(tepc: TransformEnrichPassConfig) -> Result<Self> {
+    fn try_from(tepc: &TransformEnrichPassConfig) -> Result<Self> {
         TransrichPass::try_from((tepc, None))
     }
 }
 
-impl TryFrom<(ConfigRoot, Option<&HashMap<String, String>>)> for TransrichPassesConfig {
+impl TryFrom<(&ConfigRoot, Option<&HashMap<String, String>>)> for TransrichPasses {
     type Error = VenumTdsError;
 
-    fn try_from(tuple: (ConfigRoot, Option<&HashMap<String, String>>)) -> Result<Self> {
-        let (mut config, enrich_map) = tuple;
+    fn try_from(tuple: (&ConfigRoot, Option<&HashMap<String, String>>)) -> Result<Self> {
+        let (config, enrich_map) = tuple;
         if config.0.is_empty() {
-            return Ok(TransrichPassesConfig { passes: Vec::new() });
+            return Ok(TransrichPasses(Vec::new()));
         }
 
         let mut v: Vec<TransrichPass> = Vec::with_capacity(config.0.len());
-        while !config.0.is_empty() {
-            let tepc = config.0.pop().expect("never empty!");
+        for tepc in &config.0 {
             let trp = TransrichPass::try_from((tepc, enrich_map))?;
             v.push(trp)
         }
-        v.reverse();
-        Ok(TransrichPassesConfig { passes: v })
+        Ok(TransrichPasses(v))
     }
 }
 
-impl TryFrom<ConfigRoot> for TransrichPassesConfig {
+impl TryFrom<&ConfigRoot> for TransrichPasses {
     type Error = VenumTdsError;
-    fn try_from(config: ConfigRoot) -> Result<Self> {
-        TransrichPassesConfig::try_from((config, None))
+    fn try_from(config: &ConfigRoot) -> Result<Self> {
+        TransrichPasses::try_from((config, None))
     }
 }
 
@@ -242,15 +245,15 @@ mod tests {
         data_cell::DataCell,
         transform::{
             data_cell::splitting::*,
-            data_cell_row::{mutate::*, transrich_pass::TransrichPass},
+            data_cell_row::{transrich_inplace::*, transrich_pass::TransrichPass},
             value::spliting::*,
         },
     };
 
     #[test]
     fn try_from_transform_enrich_pass_config_for_transrich_pass() {
-        let exp = TransrichPass {
-            transformer: vec![
+        let exp = TransrichPass::new(
+            vec![
                 Box::new(DeleteItemAtIdx(0)),
                 Box::new(DeleteItemAtIdx(1)),
                 Box::new(SplitItemAtIdx {
@@ -320,8 +323,8 @@ mod tests {
                     DataCell::new(String::from("Account Id"), 26, Value::Int32(1000)).unwrap(),
                 )),
             ],
-            transformer_stateful: Vec::new(),
-            order: Some(vec![
+            Vec::new(),
+            Some(vec![
                 Box::new(MutateItemIdx { from: 10, to: 0 }),
                 Box::new(MutateItemIdx { from: 11, to: 1 }),
                 Box::new(MutateItemIdx { from: 20, to: 2 }),
@@ -332,7 +335,7 @@ mod tests {
                 Box::new(MutateItemIdx { from: 25, to: 7 }),
                 Box::new(MutateItemIdx { from: 26, to: 8 }),
             ]),
-        };
+        );
 
         let dsl_fmt = TransformEnrichPassConfig {
             comment: Some(String::from("pass1")),
@@ -458,7 +461,7 @@ mod tests {
         let mut metadata: HashMap<String, String> = HashMap::with_capacity(1);
         metadata.insert(String::from("account_id"), String::from("1000"));
 
-        let test_pass = TransrichPass::try_from((dsl_fmt, Some(&metadata))).unwrap();
+        let test_pass = TransrichPass::try_from((&dsl_fmt, Some(&metadata))).unwrap();
 
         assert_eq!(format!("{:?}", exp), format!("{:?}", test_pass));
     }

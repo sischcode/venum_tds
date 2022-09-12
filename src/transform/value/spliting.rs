@@ -120,13 +120,13 @@ impl ValueSplitN for ValueStringSeparatorCharSplitN {
 
 #[derive(Debug)]
 pub struct ValueStringRegexPairSplit {
-    pub re: Regex,
-    pub split_none: bool,
+    re: Regex,
+    split_none: bool,
 }
 
 impl ValueStringRegexPairSplit {
-    pub fn new(regex_pattern: String, split_none: bool) -> Result<Self> {
-        let re = Regex::new(regex_pattern.as_str()).map_err(|e| {
+    pub fn new<R: AsRef<str>>(regex_pattern: R, split_none: bool) -> Result<Self> {
+        let re = Regex::new(regex_pattern.as_ref()).map_err(|e| {
             let mut err_msg = format!("{}", e);
             err_msg.push_str(" (RegexPairSplitter, ERROR_ON_REGEX_COMPILE)");
             VenumTdsError::Transform(TransformErrors::Generic { msg: err_msg })
