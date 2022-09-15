@@ -11,6 +11,7 @@ pub trait SplitDataCell: Debug {
     fn split(&self, item: &DataCell) -> Result<(DataCell, DataCell)>;
 }
 
+// TODO use implementations in venum!!!
 fn converse_to(val: &Value, type_info: &ValueType) -> Result<Value> {
     match val {
         // we have the same enum variant in src and dst, we can use/clone it as is

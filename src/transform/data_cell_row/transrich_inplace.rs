@@ -168,11 +168,14 @@ where
 
         let (left, right) = self.splitter.split(entry)?;
 
-        data_cell_row.push(left);
-        data_cell_row.push(right);
+        // we first delete it, so that we can actually reuse the index!
         if self.delete_source_item {
             data_cell_row.del_by_idx(self.idx).unwrap(); // we check it above already
         }
+
+        data_cell_row.push(left);
+        data_cell_row.push(right);
+
         Ok(())
     }
 }
