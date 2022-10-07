@@ -30,9 +30,9 @@ impl TryFrom<(&TransformEnrichPassConfig, Option<&HashMap<String, String>>)> for
     ) -> Result<Self> {
         let (tepc, enrich_map) = tuple;
 
-        let mut transrichers: Vec<Box<dyn TransrichInplace>> =
+        let mut transrichers: Vec<Box<dyn TransrichInplace + Send + Sync>> =
             Vec::with_capacity(tepc.transformers.len());
-        let mut transrichers_stateful: Vec<Box<dyn TransrichInplaceStateful>> = Vec::new();
+        let mut transrichers_stateful: Vec<Box<dyn TransrichInplaceStateful + Send>> = Vec::new();
 
         for tc in &tepc.transformers {
             match tc {
@@ -176,9 +176,9 @@ impl TryFrom<(&TransformEnrichPassConfig, Option<&HashMap<String, String>>)> for
             };
         }
 
-        let mut ordering_opt: Option<Vec<Box<dyn TransrichInplace>>> = None;
+        let mut ordering_opt: Option<Vec<Box<dyn TransrichInplace + Send + Sync>>> = None;
         if let Some(order_items) = &tepc.order_items {
-            let mut ordering: Vec<Box<dyn TransrichInplace>> =
+            let mut ordering: Vec<Box<dyn TransrichInplace + Send + Sync>> =
                 Vec::with_capacity(order_items.len());
 
             for o in order_items {

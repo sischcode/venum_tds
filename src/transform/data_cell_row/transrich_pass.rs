@@ -8,16 +8,16 @@ use super::{
 
 #[derive(Debug)]
 pub struct TransrichPass {
-    stateless_transrichers: Vec<Box<dyn TransrichInplace>>,
-    stateful_transrichers: Vec<Box<dyn TransrichInplaceStateful>>,
-    ordering_transrichers: Option<Vec<Box<dyn TransrichInplace>>>,
+    stateless_transrichers: Vec<Box<dyn TransrichInplace + Send + Sync>>,
+    stateful_transrichers: Vec<Box<dyn TransrichInplaceStateful + Send>>,
+    ordering_transrichers: Option<Vec<Box<dyn TransrichInplace + Send + Sync>>>,
 }
 
 impl TransrichPass {
     pub fn new(
-        transformer: Vec<Box<dyn TransrichInplace>>,
-        transformer_stateful: Vec<Box<dyn TransrichInplaceStateful>>,
-        order: Option<Vec<Box<dyn TransrichInplace>>>,
+        transformer: Vec<Box<dyn TransrichInplace + Send + Sync>>,
+        transformer_stateful: Vec<Box<dyn TransrichInplaceStateful + Send>>,
+        order: Option<Vec<Box<dyn TransrichInplace + Send + Sync>>>,
     ) -> Self {
         Self {
             stateless_transrichers: transformer,
