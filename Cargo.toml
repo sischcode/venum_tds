@@ -1,21 +1,21 @@
 [package]
 name = "venum_tds"
-version = "0.1.0"
+version = "0.1.1"
 description = "Tabular Data Structures (tds), based on venum's `Value` Enum."
 authors = ["Joerg Sischka <sischcode@gmx.net>"]
 readme = "README.md"
 repository = "https://github.com/sischcode/venum_tds"
 keywords = ["venum", "table", "tabular", "row", "cell", "csv", "data structures", "structs", "parsing", "dynamic typing"]
 license = "Apache-2.0"
-license-file = "LICENSE"
+# license-file = "LICENSE"
 edition = "2021"
-rust-version = "1.62"
+# rust-version = "1.62"
 include = ["/src", "README.md", "LICENSE"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-venum = { path = "../venum", version = "0.1.0" }
+venum = { path = "../venum", version = "0.1.1" }
 thiserror = "1.0"
 strum_macros = "0.24"
 
