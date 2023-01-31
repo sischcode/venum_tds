@@ -2,7 +2,7 @@
 name = "venum_tds"
 version = "0.1.1"
 description = "Tabular Data Structures (tds), based on venum's `Value` Enum."
-authors = ["Joerg Sischka <sischcode@gmx.net>"]
+authors = ["Jörg Sischka <sischcode@gmx.net>"]
 readme = "README.md"
 repository = "https://github.com/sischcode/venum_tds"
 keywords = ["venum", "table", "tabular", "row", "cell", "csv", "data structures", "structs", "parsing", "dynamic typing"]
