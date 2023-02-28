@@ -256,7 +256,7 @@ mod tests {
     }
 
     #[test]
-    fn add_item_runtime() {
+    fn add_item_runtime_current_date_time_utc_as_fixed_offset() {
         let mut c1 = DataCellRow::new();
         let container_transricher = AddItemRuntime {
             header: Some(String::from("col1")),

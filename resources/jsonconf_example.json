@@ -28,7 +28,7 @@
         "cfg": {
             "spec": {
                 "name": "static",
-                "value": "true 666"
+                "value": "true 101"
             },
             "target": {
                 "idx": 12,
