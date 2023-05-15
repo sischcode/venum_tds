@@ -33,6 +33,7 @@ impl TransrichPass {
             .iter()
             .try_for_each(|tri| tri.transrich(container))?;
 
+        // This is the reason why the transrich function needs to take &mut self, instead of just &self
         self.stateful_transrichers
             .iter_mut()
             .try_for_each(|tri| tri.transrich(container))?;
